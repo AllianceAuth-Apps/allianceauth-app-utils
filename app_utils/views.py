@@ -1,4 +1,5 @@
 from enum import Enum
+from http import HTTPStatus
 from typing import Optional
 
 from django.http import HttpResponse, JsonResponse
@@ -17,19 +18,18 @@ class HttpResponseNoContent(HttpResponse):
     The content operations are ignored.
     """
 
-    def __init__(self, content="", mimetype=None, status=None, content_type=None):
-        super().__init__(status=204)
+    status_code = HTTPStatus.NO_CONTENT
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # although we don't define a content-type, base class sets a
         # default one -- remove it, we're not returning content
-        if "content-type" in self._headers:
+        if hasattr(self, "_headers") and "content-type" in self._headers:  # Django<3.2
             del self._headers["content-type"]
-
-    def _set_content(self, value):
-        pass
-
-    def _get_content(self, value):
-        pass
+        elif hasattr(self, "headers") and "content-type" in self.headers:  # Django>=3.2
+            del self.headers["content-type"]
+        else:
+            raise ValueError("No header found")  # this should never be called
 
 
 class JSONResponseMixin:

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.8.1] - 2021-10-29
+
+### Changed
+
+Added tests for AA 2.9 / Django 3.2 to CI
+
+### Fixed
+
+- Class `HttpResponseNoContent` did not work with Django 3.2
+
 ## [1.8.0] - 2021-07-14
 
 ### Added

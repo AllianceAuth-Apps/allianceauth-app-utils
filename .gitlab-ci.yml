@@ -1,5 +1,5 @@
 stages:
-- pre-commit
+- checks
 - test
 - deploy
 
@@ -11,8 +11,8 @@ before_script:
 - pip install tox
 
 pre-commit-check:
-  stage: pre-commit
-  image: python:3.6-buster
+  stage: checks
+  image: python:3.7-buster
   variables:
     PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
   cache:
@@ -22,32 +22,40 @@ pre-commit-check:
     - pip install pre-commit
     - pre-commit run --all-files
 
-test-3.6:
+check-docs:
+  stage: checks
+  image: python:3.7-buster
+  script:
+    - cd utils-test-app
+    - tox -e docs
+
+test-py36-django31:
   image: python:3.6-buster
   script:
     - cd utils-test-app
     - tox -e py36-django31
     - bash <(curl -s https://codecov.io/bash)
 
-test-3.7:
+test-py37-django32:
   image: python:3.7-buster
   script:
     - cd utils-test-app
-    - tox -e py37-django31
+    - tox -e py37-django32
     - bash <(curl -s https://codecov.io/bash)
 
-test-3.8:
+test-py38-django32:
   image: python:3.8-buster
   script:
     - cd utils-test-app
-    - tox -e py38-django31
+    - tox -e py38-django32
     - bash <(curl -s https://codecov.io/bash)
 
-test-docs:
-  image: python:3.7-buster
+test-py39-django32:
+  image: python:3.9-buster
   script:
     - cd utils-test-app
-    - tox -e docs
+    - tox -e py39-django32
+    - bash <(curl -s https://codecov.io/bash)
 
 deploy-pypi:
   stage: deploy

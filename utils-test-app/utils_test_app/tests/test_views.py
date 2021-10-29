@@ -3,6 +3,7 @@ from django.utils import translation
 from django.utils.html import mark_safe
 
 from app_utils.views import (
+    HttpResponseNoContent,
     bootstrap_glyph_html,
     bootstrap_label_html,
     bootstrap_link_button_html,
@@ -14,6 +15,20 @@ from app_utils.views import (
 
 MODULE_PATH = "app_utils"
 CURRENT_PATH = "utils_test_app.tests.test_all"
+
+
+class TestHttpResponseNoContent(TestCase):
+    def test_can_create_objects(self):
+        # when
+        res = HttpResponseNoContent()
+        # then
+        self.assertEqual(res.status_code, 204)
+        if hasattr(res, "_headers"):  # Django<3.2
+            self.assertNotIn("content-type", res._headers)
+        elif hasattr(res, "headers"):  # Django>=3.2
+            self.assertNotIn("content-type", res.headers)
+        else:
+            self.fail("No headers found")
 
 
 class TestHtmlHelper(TestCase):
