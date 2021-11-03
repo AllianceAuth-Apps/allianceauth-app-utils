@@ -85,7 +85,7 @@ def clean_setting(
             and min_value is not None
             and dirty_value < min_value
         ):
-            logger.warn(
+            logger.warning(
                 "You setting for {} it not valid. Please correct it. "
                 "Using minimum value for now: {}".format(name, min_value)
             )
@@ -95,13 +95,13 @@ def clean_setting(
             and max_value is not None
             and dirty_value > max_value
         ):
-            logger.warn(
+            logger.warning(
                 "You setting for {} it not valid. Please correct it. "
                 "Using maximum value for now: {}".format(name, max_value)
             )
             cleaned_value = max_value
         else:
-            logger.warn(
+            logger.warning(
                 "You setting for {} it not valid. Please correct it. "
                 "Using default for now: {}".format(name, default_value)
             )
