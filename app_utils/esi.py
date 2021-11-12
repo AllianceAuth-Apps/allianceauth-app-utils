@@ -103,17 +103,14 @@ class EsiStatus:
         """Calc seconds to retry in order to reach next error window incl. jitter."""
         if self.error_limit_reset is None:
             return 0
-        else:
-            if not max_jitter or max_jitter < 1:
-                max_jitter = self.MAX_JITTER
-
-            return self.error_limit_reset + int(random.uniform(1, max_jitter))
+        if not max_jitter or max_jitter < 1:
+            max_jitter = self.MAX_JITTER
+        return self.error_limit_reset + int(random.uniform(1, max_jitter))
 
     def raise_for_status(self):
         """Raise an exception if ESI if offline or the error limit is exceeded."""
         if not self.is_online:
             raise EsiOffline()
-
         if self.is_error_limit_exceeded:
             raise EsiErrorLimitExceeded(retry_in=self.error_limit_reset_w_jitter())
 

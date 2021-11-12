@@ -91,19 +91,32 @@ class TestEsiStatus(TestCase):
 
     @patch(MODULE_PATH + ".EsiStatus.MAX_JITTER", 20)
     def test_error_limit_reset_w_jitter_1(self):
+        # given
         obj = EsiStatus(True, error_limit_remain=30, error_limit_reset=20)
-        result = obj.error_limit_reset_w_jitter()
+        # when/then
         for _ in range(1000):
+            result = obj.error_limit_reset_w_jitter()
             self.assertGreaterEqual(result, 21)
             self.assertLessEqual(result, 41)
 
     @patch(MODULE_PATH + ".EsiStatus.MAX_JITTER", 20)
     def test_error_limit_reset_w_jitter_2(self):
+        # given
         obj = EsiStatus(True, error_limit_remain=30, error_limit_reset=20)
-        result = obj.error_limit_reset_w_jitter(10)
+        # when/then
         for _ in range(1000):
+            result = obj.error_limit_reset_w_jitter(10)
             self.assertGreaterEqual(result, 11)
             self.assertLessEqual(result, 31)
+
+    @patch(MODULE_PATH + ".EsiStatus.MAX_JITTER", 20)
+    def test_error_limit_reset_w_jitter_3(self):
+        # given
+        obj = EsiStatus(True)
+        # when
+        result = obj.error_limit_reset_w_jitter(10)
+        # then
+        self.assertEqual(result, 0)
 
     def test_raise_for_status_1(self):
         """When no error condition is met, do nothing"""
