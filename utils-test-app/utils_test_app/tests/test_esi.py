@@ -1,6 +1,7 @@
 import datetime as dt
 from unittest.mock import Mock, patch
 
+import requests
 import requests_mock
 from celery.exceptions import Retry as CeleryRetry
 
@@ -345,6 +346,30 @@ class TestFetchEsiStatus(TestCase):
             status = fetch_esi_status(ignore_daily_downtime=True)
         # then
         self.assertTrue(status.is_online)
+
+    def test_should_report_offline_on_connection_timeout(self, requests_mocker):
+        # given
+        requests_mocker.register_uri(
+            "GET",
+            url="https://esi.evetech.net/latest/status/",
+            exc=requests.exceptions.ConnectTimeout,
+        )
+        # when
+        status = fetch_esi_status()
+        # then
+        self.assertFalse(status.is_online)
+
+    def test_should_report_offline_on_connection_error(self, requests_mocker):
+        # given
+        requests_mocker.register_uri(
+            "GET",
+            url="https://esi.evetech.net/latest/status/",
+            exc=requests.exceptions.ConnectionError,
+        )
+        # when
+        status = fetch_esi_status()
+        # then
+        self.assertFalse(status.is_online)
 
 
 class TestRetryTaskIfEsiIsDown(TestCase):

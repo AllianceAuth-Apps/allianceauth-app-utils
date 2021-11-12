@@ -130,8 +130,11 @@ def fetch_esi_status(ignore_daily_downtime: bool = False) -> EsiStatus:
         downtime_end = _calc_downtime(APPUTILS_ESI_DAILY_DOWNTIME_END)
         if now() >= downtime_start and now() <= downtime_end:
             return EsiStatus(is_online=False)
-
-    r = _request_esi_status()
+    try:
+        r = _request_esi_status()
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+        logger.warning("Network error when trying to call ESI", exc_info=True)
+        return EsiStatus(is_online=False)
     if not r.ok:
         is_online = False
     else:
@@ -139,14 +142,12 @@ def fetch_esi_status(ignore_daily_downtime: bool = False) -> EsiStatus:
             is_online = False if r.json().get("vip") else True
         except ValueError:
             is_online = False
-
     try:
         remain = int(r.headers.get("X-Esi-Error-Limit-Remain"))
         reset = int(r.headers.get("X-Esi-Error-Limit-Reset"))
     except TypeError:
-        logger.warning("Failed to parse HTTP headers: %s", r.headers, exc_info=True)
+        logger.warning("Failed to parse HTTP headers: %s", r.headers)
         return EsiStatus(is_online=is_online)
-
     logger.debug(
         "ESI status: is_online: %s, error_limit_remain = %s, error_limit_reset = %s",
         is_online,
@@ -171,21 +172,15 @@ def _convert_float_hours(hours_float: float) -> tuple:
 
 
 def _request_esi_status() -> requests.Response:
-    """Make request to ESI about curren status with retries."""
+    """Fetch current status from ESI. Retry on common HTTP errors."""
     max_retries = 3
     retries = 0
     while True:
-        try:
-            r = requests.get(
-                "https://esi.evetech.net/latest/status/",
-                timeout=(5, 30),
-                headers={"User-Agent": f"{__package__};{__version__}"},
-            )
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.warning("Network error when trying to call ESI", exc_info=True)
-            return EsiStatus(
-                is_online=False, error_limit_remain=None, error_limit_reset=None
-            )
+        r = requests.get(
+            "https://esi.evetech.net/latest/status/",
+            timeout=(5, 30),
+            headers={"User-Agent": f"{__package__};{__version__}"},
+        )
         if r.status_code not in {
             502,  # HTTPBadGateway
             503,  # HTTPServiceUnavailable

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.8.2] - 2021-10-29
+
+### Fixed
+
+- fetch_esi_status() aborts with exception on connection timeout and connect errors
+
 ## [1.8.1] - 2021-10-29
 
 ### Changed
