@@ -92,13 +92,8 @@ testing
 
 Utilities for making it easier to write tests.
 
-.. autofunction:: app_utils.testing.add_character_to_user
-.. autofunction:: app_utils.testing.add_character_to_user_2
-.. autofunction:: app_utils.testing.add_new_token
-.. autofunction:: app_utils.testing.generate_invalid_pk
-.. autoclass:: app_utils.testing.NoSocketsTestCase
-.. autofunction:: app_utils.testing.queryset_pks
-.. autofunction:: app_utils.testing.set_test_logger
+.. automodule:: app_utils.testing
+    :members:
 
 urls
 ========
