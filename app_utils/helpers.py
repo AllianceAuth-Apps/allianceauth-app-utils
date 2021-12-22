@@ -13,6 +13,13 @@ def chunks(lst, size):
         yield lst[i : i + size]
 
 
+def default_if_none(value, default):
+    """Return default if value is None."""
+    if value is None:
+        return default
+    return value
+
+
 # old: get_swagger_spec_path
 def swagger_spec_path() -> str:
     """returns the path to the current esi swagger spec file"""

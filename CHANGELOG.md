@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+### Added
+
+- default_if_none()
+
 ## [1.8.2] - 2021-10-29
 
 ### Fixed

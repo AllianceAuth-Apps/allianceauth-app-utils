@@ -1,2 +1,2 @@
 __title__ = "Allianceauth App Utils"
-__version__ = "1.8.2"
+__version__ = "1.9.0"

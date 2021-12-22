@@ -4,7 +4,27 @@ from unittest.mock import patch
 from django.core.cache import cache
 from django.test import TestCase
 
-from app_utils.helpers import humanize_number, throttle
+from app_utils.helpers import default_if_none, humanize_number, throttle
+
+
+class TestingDefaultIfNone(TestCase):
+    def test_should_return_value(self):
+        # when
+        result = default_if_none("alpha", "bravo")
+        # then
+        self.assertEqual(result, "alpha")
+
+    def test_should_return_default(self):
+        # when
+        result = default_if_none(None, "bravo")
+        # then
+        self.assertEqual(result, "bravo")
+
+    def test_should_return_value_for_false(self):
+        # when
+        result = default_if_none(False, "bravo")
+        # then
+        self.assertFalse(result)
 
 
 class TestFormatisk(TestCase):
