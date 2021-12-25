@@ -288,7 +288,7 @@ class TestFetchEsiStatus(TestCase):
             status_code=504,
         )
         status = fetch_esi_status()
-        self.assertEqual(requests_mocker.call_count, 4)
+        self.assertEqual(requests_mocker.call_count, 3)
         self.assertFalse(status.is_online)
 
     @patch(MODULE_PATH + ".sleep", lambda x: None)
@@ -304,7 +304,7 @@ class TestFetchEsiStatus(TestCase):
             status_code=502,
         )
         status = fetch_esi_status()
-        self.assertEqual(requests_mocker.call_count, 4)
+        self.assertEqual(requests_mocker.call_count, 3)
         self.assertFalse(status.is_online)
 
     @patch(MODULE_PATH + ".sleep", lambda x: None)

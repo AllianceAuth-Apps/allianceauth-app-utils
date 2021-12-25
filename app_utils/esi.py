@@ -170,9 +170,8 @@ def _convert_float_hours(hours_float: float) -> tuple:
 
 def _request_esi_status() -> requests.Response:
     """Fetch current status from ESI. Retry on common HTTP errors."""
-    max_retries = 3
-    retries = 0
-    while True:
+    max_runs = 3
+    for run in range(1, max_runs + 1):
         r = requests.get(
             "https://esi.evetech.net/latest/status/",
             timeout=(5, 30),
@@ -184,19 +183,15 @@ def _request_esi_status() -> requests.Response:
             504,  # HTTPGatewayTimeout
         }:
             break
-        else:
-            retries += 1
-            if retries > max_retries:
-                break
-            else:
-                logger.warning(
-                    "HTTP status code %s - Retry %s/%s",
-                    r.status_code,
-                    retries,
-                    max_retries,
-                )
-                wait_secs = 0.1 * (random.uniform(2, 4) ** (retries - 1))
-                sleep(wait_secs)
+        logger.warning(
+            "HTTP status code %s - Try %s/%s",
+            r.status_code,
+            run,
+            max_runs,
+        )
+        if run < max_runs:
+            wait_secs = 0.1 * (random.uniform(2, 4) ** run)
+            sleep(wait_secs)
     return r
 
 
@@ -211,9 +206,9 @@ def retry_task_if_esi_is_down(self):
     try:
         fetch_esi_status().raise_for_status()
     except EsiOffline as ex:
-        countdown = (10 + int(random.uniform(1, 10))) * 60
+        countdown = (5 + int(random.uniform(1, 10))) * 60
         logger.warning(
-            "ESI appears to be offline. Trying again in %d minutes.", countdown
+            "ESI appears to be offline. Trying again in %d seconds.", countdown
         )
         raise self.retry(countdown=countdown) from ex
     except EsiErrorLimitExceeded as ex:

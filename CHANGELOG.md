@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.9.1] - tbd.
+
+### Changed
+
+- Improve request logic for esi status
+
+## [1.9.0] - 2021-12-22
+
 ### Added
 
 - default_if_none()
