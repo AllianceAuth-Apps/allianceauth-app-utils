@@ -29,12 +29,6 @@ check-docs:
     - cd utils-test-app
     - tox -e docs
 
-test-py36-django31:
-  image: python:3.6-buster
-  script:
-    - cd utils-test-app
-    - tox -e py36-django31
-    - bash <(curl -s https://codecov.io/bash)
 
 test-py37-django32:
   image: python:3.7-buster

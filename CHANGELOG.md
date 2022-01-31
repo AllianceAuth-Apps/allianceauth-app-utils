@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Remove support for Python 3.6
 - Improve request logic for esi status
 
 ## [1.9.0] - 2021-12-22
