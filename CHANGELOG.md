@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-## [1.9.1] - tbd.
+## [1.10.0] - 2022-01-31
+
+### Added
+
+- New features that make it much easier to create an ESI client stub individually for each test, e.g. endpoints can be defined with testdata or side effects for each test
 
 ### Changed
 

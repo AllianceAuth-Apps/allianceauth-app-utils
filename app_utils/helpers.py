@@ -57,8 +57,8 @@ def humanize_number(value, magnitude: str = None, precision: int = 1) -> str:
     """Return the value in humanized format, e.g. `1234` becomes `1.2k`
 
     Args:
-    - magnitude: fix the magnitude to format the number, e.g. `"b"`
-    - precision: number of digits to round for
+        magnitude: fix the magnitude to format the number, e.g. `"b"`
+        precision: number of digits to round for
     """
     value = float(value)
     power_map = {"t": 12, "b": 9, "m": 6, "k": 3, "": 0}

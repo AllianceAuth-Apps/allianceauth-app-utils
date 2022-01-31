@@ -1,33 +1,52 @@
 from datetime import datetime
+from unittest.mock import Mock
 
 from bravado.exception import HTTPNotFound
 
 from django.test import TestCase
 
-from app_utils.esi_testing import EsiClientStub, EsiEndpoint
+from app_utils.esi_testing import (
+    SIDE_EFFECT_DEFAULT,
+    BravadoResponseStub,
+    EsiClientStub,
+    EsiEndpoint,
+)
 
-testdata = {
-    "Alpha": {
-        "get_cake": {"1": "cheesecake", "2": "strawberrycake"},
-        "get_details": {"1": {"appointment": "2015-03-24T11:37:00Z"}},
-        "get_secret": {"1": "blue secret", "2": "red secret"},
-        "get_simple": "steak",
-        "get_double_impact": {"1": {"A": "Madrid", "B": "Tokyo"}},
-    }
-}
+
+class TestBravadoResponseStub(TestCase):
+    def test_create(self):
+        # when
+        obj = BravadoResponseStub(404, "dummy")
+        # then
+        self.assertEqual(obj.status_code, 404)
+        self.assertEqual(obj.reason, "dummy")
+        self.assertEqual(obj.text, "")
+        self.assertDictEqual(obj.headers, {})
+        self.assertIsNone(obj.raw_bytes)
+
+    def test_str(self):
+        obj = BravadoResponseStub(404, "dummy")
+        self.assertEqual(str(obj), "404 dummy")
 
 
 class TestEsiClientStub(TestCase):
     def setUp(self) -> None:
-        self.stub = EsiClientStub(
-            testdata,
-            [
-                EsiEndpoint("Alpha", "get_cake", "cake_id"),
-                EsiEndpoint("Alpha", "get_secret", "secret_id", needs_token=True),
-                EsiEndpoint("Alpha", "get_simple"),
-                EsiEndpoint("Alpha", "get_double_impact", ("first_id", "second_id")),
-            ],
-        )
+        self.testdata = {
+            "Alpha": {
+                "get_cake": {"1": "cheesecake", "2": "strawberrycake"},
+                "get_details": {"1": {"appointment": "2015-03-24T11:37:00Z"}},
+                "get_secret": {"1": "blue secret", "2": "red secret"},
+                "get_simple": "steak",
+                "get_double_impact": {"1": {"A": "Madrid", "B": "Tokyo"}},
+            }
+        }
+        self.endpoints = [
+            EsiEndpoint("Alpha", "get_cake", "cake_id"),
+            EsiEndpoint("Alpha", "get_secret", "secret_id", needs_token=True),
+            EsiEndpoint("Alpha", "get_simple"),
+            EsiEndpoint("Alpha", "get_double_impact", ("first_id", "second_id")),
+        ]
+        self.stub = EsiClientStub(self.testdata, self.endpoints)
 
     def test_can_create_endpoint(self):
         self.assertTrue(hasattr(self.stub, "Alpha"))
@@ -61,7 +80,7 @@ class TestEsiClientStub(TestCase):
     def test_raises_exception_when_trying_to_refine_same_endpoint(self):
         with self.assertRaises(ValueError):
             EsiClientStub(
-                testdata,
+                self.testdata,
                 [
                     EsiEndpoint("Alpha", "get_cake", "cake_id"),
                     EsiEndpoint("Alpha", "get_cake", "cake_id"),
@@ -71,7 +90,7 @@ class TestEsiClientStub(TestCase):
     def test_raises_exception_when_trying_to_refine_endpoint_without_data(self):
         with self.assertRaises(ValueError):
             EsiClientStub(
-                testdata,
+                self.testdata,
                 [
                     EsiEndpoint("Alpha", "get_fruit_id", "fruit_id"),
                 ],
@@ -79,10 +98,94 @@ class TestEsiClientStub(TestCase):
 
     def test_can_convert_datetimes(self):
         stub = EsiClientStub(
-            testdata,
+            self.testdata,
             [
                 EsiEndpoint("Alpha", "get_details", "id"),
             ],
         )
         results = stub.Alpha.get_details(id=1).results()
         self.assertIsInstance(results["appointment"], datetime)
+
+    def test_create_stub_from_endpoints(self):
+        # given
+        endpoints = [
+            EsiEndpoint(
+                "Alpha",
+                "get_details",
+                "id",
+                data={"1": "dummy"},
+            )
+        ]
+        # when
+        stub = EsiClientStub.create_from_endpoints(endpoints)
+        # then
+        self.assertEqual(stub.Alpha.get_details(id=1).results(), "dummy")
+
+    def test_should_replace_endpoints(self):
+        # given
+        endpoints = [
+            EsiEndpoint(
+                "Alpha",
+                "get_details",
+                "id",
+                data={"1": "dummy"},
+            ),
+            EsiEndpoint("Alpha", "get_simple", data="simple"),
+        ]
+        stub_1 = EsiClientStub.create_from_endpoints(endpoints)
+        # when
+        stub_2 = stub_1.replace_endpoints(
+            [
+                EsiEndpoint(
+                    "Alpha",
+                    "get_details",
+                    "id",
+                    data={"1": "replaced"},
+                )
+            ]
+        )
+        # then
+        self.assertEqual(stub_2.Alpha.get_simple().results(), "simple")
+        self.assertEqual(stub_2.Alpha.get_details(id=1).results(), "replaced")
+        self.assertNotEqual(stub_1, stub_2)
+
+    def test_should_raise_http_error(self):
+        # given
+        endpoints = [EsiEndpoint("Alpha", "get_simple", http_error_code=404)]
+        stub = EsiClientStub.create_from_endpoints(endpoints)
+        # when
+        with self.assertRaises(HTTPNotFound):
+            self.assertEqual(stub.Alpha.get_simple().results())
+
+    def test_should_return_result_from_side_effect(self):
+        # given
+        my_mock = Mock()
+        my_mock.return_value = "my mock was called"
+        endpoints = [EsiEndpoint("Alpha", "get_simple", side_effect=my_mock)]
+        stub = EsiClientStub.create_from_endpoints(endpoints)
+        # when
+        result = stub.Alpha.get_simple().results()
+        # then
+        self.assertEqual(result, "my mock was called")
+
+    def test_should_resturn_default_from_side_efect(self):
+        # given
+        def my_side_effect(**kwargs):
+            if kwargs["id"] == 2:
+                return "special"
+            return SIDE_EFFECT_DEFAULT
+
+        endpoints = [
+            EsiEndpoint(
+                "Alpha",
+                "get_details",
+                "id",
+                data={"1": "alpha", "2": "bravo"},
+                side_effect=my_side_effect,
+            )
+        ]
+        # when
+        stub = EsiClientStub.create_from_endpoints(endpoints)
+        # then
+        self.assertEqual(stub.Alpha.get_details(id=1).results(), "alpha")
+        self.assertEqual(stub.Alpha.get_details(id=2).results(), "special")
