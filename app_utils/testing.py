@@ -4,16 +4,23 @@ import logging
 import os
 import re
 import socket
+from itertools import count
 from typing import Iterable, List, Tuple
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from django.db import models
 from django.http import HttpResponse, JsonResponse
 from django.test import TestCase
 from esi.models import Scope, Token
 
-from allianceauth.authentication.models import CharacterOwnership
-from allianceauth.eveonline.models import EveCharacter
+from allianceauth.authentication.models import CharacterOwnership, State
+from allianceauth.eveonline.models import (
+    EveAllianceInfo,
+    EveCharacter,
+    EveCorporationInfo,
+    EveFactionInfo,
+)
+from allianceauth.groupmanagement.models import AuthGroup
 from allianceauth.tests.auth_utils import AuthUtils
 
 from .datetime import dt_eveformat
@@ -84,8 +91,53 @@ def set_test_logger(logger_name: str, name: str) -> object:
     return my_logger
 
 
-def add_new_token(user: User, character: EveCharacter, scopes: List[str]) -> Token:
-    """generates a new Token for the given character and adds it to the user"""
+def queryset_pks(queryset) -> set:
+    """shortcut that returns the pks of the given queryset as set.
+    Useful for comparing test results.
+    """
+    return set(queryset.values_list("pk", flat=True))
+
+
+def response_text(response: HttpResponse) -> str:
+    """Return content of a HTTP response as string."""
+    return response.content.decode("utf-8")
+
+
+def json_response_to_python(response: JsonResponse) -> object:
+    """Convert JSON response into Python object."""
+    return json.loads(response_text(response))
+
+
+def json_response_to_dict(response: JsonResponse, key="id") -> dict:
+    """Convert JSON response into dict by given key."""
+    return {x[key]: x for x in json_response_to_python(response)}
+
+
+def multi_assert_in(items: Iterable, container: Iterable) -> bool:
+    """Return True if all items are in container."""
+    for item in items:
+        if item not in container:
+            return False
+
+    return True
+
+
+def multi_assert_not_in(items: Iterable, container: Iterable) -> bool:
+    """Return True if none of the item is in container."""
+    for item in items:
+        if item in container:
+            return False
+
+    return True
+
+
+# factories
+
+
+def add_new_token(
+    user: User, character: EveCharacter, scopes: List[str] = None
+) -> Token:
+    """Generate a new token for a user based on a character."""
     return _store_as_Token(
         _generate_token(
             character_id=character.character_id,
@@ -94,6 +146,64 @@ def add_new_token(user: User, character: EveCharacter, scopes: List[str]) -> Tok
         ),
         user,
     )
+
+
+def _generate_token(
+    character_id: int,
+    character_name: str,
+    access_token: str = "access_token",
+    refresh_token: str = "refresh_token",
+    scopes: list = None,
+    timestamp_dt: object = None,
+    expires_in: int = 1200,
+) -> dict:
+    """Generates the input to create a new SSO test token"""
+    if timestamp_dt is None:
+        timestamp_dt = dt.datetime.utcnow()
+    if scopes is None:
+        scopes = [
+            "esi-mail.read_mail.v1",
+            "esi-wallet.read_character_wallet.v1",
+            "esi-universe.read_structures.v1",
+        ]
+    token = {
+        "access_token": access_token,
+        "token_type": "Bearer",
+        "expires_in": expires_in,
+        "refresh_token": refresh_token,
+        "timestamp": int(timestamp_dt.timestamp()),
+        "CharacterID": character_id,
+        "CharacterName": character_name,
+        "ExpiresOn": dt_eveformat(timestamp_dt + dt.timedelta(seconds=expires_in)),
+        "Scopes": " ".join(list(scopes)),
+        "TokenType": "Character",
+        "CharacterOwnerHash": random_string(28),
+        "IntellectualProperty": "EVE",
+    }
+    return token
+
+
+def _store_as_Token(token: dict, user: object) -> Token:
+    """Stores a generated token dict as Token object for given user
+
+    returns Token object
+    """
+    character_tokens = user.token_set.filter(character_id=token["CharacterID"])
+    if character_tokens.exists():
+        token["CharacterOwnerHash"] = character_tokens.first().character_owner_hash
+    obj = Token.objects.create(
+        access_token=token["access_token"],
+        refresh_token=token["refresh_token"],
+        user=user,
+        character_id=token["CharacterID"],
+        character_name=token["CharacterName"],
+        token_type=token["TokenType"],
+        character_owner_hash=token["CharacterOwnerHash"],
+    )
+    for scope_name in token["Scopes"].split(" "):
+        scope, _ = Scope.objects.get_or_create(name=scope_name)
+        obj.scopes.add(scope)
+    return obj
 
 
 def create_user_from_evecharacter(
@@ -185,102 +295,6 @@ def add_character_to_user_2(
     return character
 
 
-def _generate_token(
-    character_id: int,
-    character_name: str,
-    access_token: str = "access_token",
-    refresh_token: str = "refresh_token",
-    scopes: list = None,
-    timestamp_dt: object = None,
-    expires_in: int = 1200,
-) -> dict:
-    """Generates the input to create a new SSO test token"""
-    if timestamp_dt is None:
-        timestamp_dt = dt.datetime.utcnow()
-    if scopes is None:
-        scopes = [
-            "esi-mail.read_mail.v1",
-            "esi-wallet.read_character_wallet.v1",
-            "esi-universe.read_structures.v1",
-        ]
-    token = {
-        "access_token": access_token,
-        "token_type": "Bearer",
-        "expires_in": expires_in,
-        "refresh_token": refresh_token,
-        "timestamp": int(timestamp_dt.timestamp()),
-        "CharacterID": character_id,
-        "CharacterName": character_name,
-        "ExpiresOn": dt_eveformat(timestamp_dt + dt.timedelta(seconds=expires_in)),
-        "Scopes": " ".join(list(scopes)),
-        "TokenType": "Character",
-        "CharacterOwnerHash": random_string(28),
-        "IntellectualProperty": "EVE",
-    }
-    return token
-
-
-def _store_as_Token(token: dict, user: object) -> Token:
-    """Stores a generated token dict as Token object for given user
-
-    returns Token object
-    """
-    obj = Token.objects.create(
-        access_token=token["access_token"],
-        refresh_token=token["refresh_token"],
-        user=user,
-        character_id=token["CharacterID"],
-        character_name=token["CharacterName"],
-        token_type=token["TokenType"],
-        character_owner_hash=token["CharacterOwnerHash"],
-    )
-    for scope_name in token["Scopes"].split(" "):
-        scope, _ = Scope.objects.get_or_create(name=scope_name)
-        obj.scopes.add(scope)
-
-    return obj
-
-
-def queryset_pks(queryset) -> set:
-    """shortcut that returns the pks of the given queryset as set.
-    Useful for comparing test results.
-    """
-    return set(queryset.values_list("pk", flat=True))
-
-
-def response_text(response: HttpResponse) -> str:
-    """Return content of a HTTP response as string."""
-    return response.content.decode("utf-8")
-
-
-def json_response_to_python(response: JsonResponse) -> object:
-    """Convert JSON response into Python object."""
-    return json.loads(response_text(response))
-
-
-def json_response_to_dict(response: JsonResponse, key="id") -> dict:
-    """Convert JSON response into dict by given key."""
-    return {x[key]: x for x in json_response_to_python(response)}
-
-
-def multi_assert_in(items: Iterable, container: Iterable) -> bool:
-    """Return True if all items are in container."""
-    for item in items:
-        if item not in container:
-            return False
-
-    return True
-
-
-def multi_assert_not_in(items: Iterable, container: Iterable) -> bool:
-    """Return True if none of the item is in container."""
-    for item in items:
-        if item in container:
-            return False
-
-    return True
-
-
 def create_fake_user(
     character_id: int,
     character_name: str,
@@ -318,3 +332,76 @@ def create_fake_user(
         perm_objs = [AuthUtils.get_permission_by_name(perm) for perm in permissions]
         user = AuthUtils.add_permissions_to_user(perms=perm_objs, user=user)
     return user
+
+
+def create_authgroup(states: Iterable[State] = None, **kwargs) -> Group:
+    """Create Group object with additional Auth related properties for tests."""
+    if "name" not in kwargs:
+        kwargs["name"] = f"Test Group #{next_number('authgroup')}"
+    name = kwargs.pop("name")
+    group = Group.objects.create(name=name)
+    if states:
+        group.authgroup.states.add(*states)
+    if kwargs:
+        AuthGroup.objects.filter(group=group).update(**kwargs)
+        group.authgroup.refresh_from_db()
+    return group
+
+
+def create_state(
+    priority: int,
+    permissions: Iterable[str] = None,
+    member_characters: Iterable[EveCharacter] = None,
+    member_corporations: Iterable[EveCorporationInfo] = None,
+    member_alliances: Iterable[EveAllianceInfo] = None,
+    member_factions: Iterable[EveFactionInfo] = None,
+    **kwargs,
+) -> State:
+    """Create a State object for tests."""
+    params = {"priority": priority, "name": f"Test State #{next_number('state_name')}"}
+    params.update(kwargs)
+    obj = State.objects.create(**params)
+    if permissions:
+        perm_objs = [AuthUtils.get_permission_by_name(perm) for perm in permissions]
+        obj.permissions.add(*perm_objs)
+    if member_characters:
+        obj.member_characters.add(*member_characters)
+    if member_corporations:
+        obj.member_corporations.add(*member_corporations)
+    if member_alliances:
+        obj.member_alliances.add(*member_alliances)
+    if member_factions:
+        obj.member_factions.add(*member_factions)
+    return obj
+
+
+def create_eve_character(
+    character_id: int, character_name: str, **kwargs
+) -> EveCharacter:
+    """Create an EveCharacter object for tests."""
+    params = {
+        "character_id": character_id,
+        "character_name": character_name,
+        "corporation_id": 2001,
+        "corporation_name": "Wayne Technologies",
+        "corporation_ticker": "WYT",
+        "alliance_id": 3001,
+        "alliance_name": "Wayne Enterprises",
+        "alliance_ticker": "WYE",
+    }
+    params.update(kwargs)
+    return EveCharacter.objects.create(**params)
+
+
+def next_number(key=None) -> int:
+    """Generate consequetive numbers. Optionally numbers are generates for given key."""
+    if key is None:
+        key = "_general"
+    try:
+        return next_number._counter[key].__next__()
+    except AttributeError:
+        next_number._counter = dict()
+    except KeyError:
+        pass
+    next_number._counter[key] = count(start=1)
+    return next_number._counter[key].__next__()

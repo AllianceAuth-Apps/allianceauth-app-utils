@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.11.0] - 2022-02-16
+
+### Added
+
+- testing: New factory methods for test objects of Group, State, EveCharacter
+
+### Fixed
+
+- testing.add_new_token(): Will now create identical character owner hash for additional tokens of the same character to prevent owner revocation by Auth
+
 ## [1.10.0] - 2022-01-31
 
 ### Added
@@ -125,7 +135,6 @@ Added tests for AA 2.9 / Django 3.2 to CI
 - testing.create_user_from_evecharacter
 - esi_testing module with tools for testing with django-esi
 - testing: response_text, json_response_to_python, json_response_to_dict, multi_assert_in, multi_assert_not_in
-
 
 ## [1.0.2] - 2021-03-13
 

@@ -7,6 +7,8 @@ from allianceauth.authentication.models import EveCharacter
 from app_utils.testing import (
     NoSocketsTestCase,
     SocketAccessError,
+    add_new_token,
+    create_eve_character,
     create_fake_user,
     create_user_from_evecharacter,
     generate_invalid_pk,
@@ -94,3 +96,34 @@ class TestCreateFakeUser(TestCase):
         user = create_fake_user(1001, "Bruce Wayne", permissions=["auth.add_group"])
         # then
         self.assertTrue(user.has_perm("auth.add_group"))
+
+
+class TestAddNewToken(TestCase):
+    def test_should_add_new_token(self):
+        # given
+        user = User.objects.create(username="Bruce Wayne")
+        character = create_eve_character(1001, "Bruce Wayne")
+        # when
+        token = add_new_token(user, character)
+        # then
+        self.assertEqual(token.character_id, character.character_id)
+
+    def test_should_add_new_token_with_scope(self):
+        # given
+        user = User.objects.create(username="Bruce Wayne")
+        character = create_eve_character(1001, "Bruce Wayne")
+        # when
+        token = add_new_token(user, character, scopes=["abc"])
+        # then
+        self.assertEqual(token.character_id, character.character_id)
+        self.assertTrue(token.scopes.filter(name="abc").exists())
+
+    def test_should_have_same_character_owner_hash_in_additional_tokens(self):
+        # given
+        user = User.objects.create(username="Bruce Wayne")
+        character = create_eve_character(1001, "Bruce Wayne")
+        token_1 = add_new_token(user, character, scopes=["scope1"])
+        # when
+        token_2 = add_new_token(user, character, scopes=["scope2"])
+        # then
+        self.assertEqual(token_1.character_owner_hash, token_2.character_owner_hash)
