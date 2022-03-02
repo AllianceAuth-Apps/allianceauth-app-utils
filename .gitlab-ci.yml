@@ -12,7 +12,7 @@ before_script:
 
 pre-commit-check:
   stage: checks
-  image: python:3.7-buster
+  image: python:3.8-bullseye
   variables:
     PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
   cache:
@@ -24,36 +24,56 @@ pre-commit-check:
 
 check-docs:
   stage: checks
-  image: python:3.7-buster
+  image: python:3.8-bullseye
   script:
     - cd utils-test-app
     - tox -e docs
 
-
 test-py37-django32:
-  image: python:3.7-buster
+  image: python:3.7-bullseye
   script:
     - cd utils-test-app
     - tox -e py37-django32
     - bash <(curl -s https://codecov.io/bash)
 
 test-py38-django32:
-  image: python:3.8-buster
+  image: python:3.8-bullseye
   script:
     - cd utils-test-app
     - tox -e py38-django32
     - bash <(curl -s https://codecov.io/bash)
 
 test-py39-django32:
-  image: python:3.9-buster
+  image: python:3.9-bullseye
   script:
     - cd utils-test-app
     - tox -e py39-django32
     - bash <(curl -s https://codecov.io/bash)
 
+test-py38-django40:
+  image: python:3.8-bullseye
+  script:
+    - cd utils-test-app
+    - tox -e py38-django40
+    - bash <(curl -s https://codecov.io/bash)
+
+test-py39-django40:
+  image: python:3.9-bullseye
+  script:
+    - cd utils-test-app
+    - tox -e py39-django40
+    - bash <(curl -s https://codecov.io/bash)
+
+test-py310-django40:
+  image: python:3.10-bullseye
+  script:
+    - cd utils-test-app
+    - tox -e py310-django40
+    - bash <(curl -s https://codecov.io/bash)
+
 deploy-pypi:
   stage: deploy
-  image: python:3.7-buster
+  image: python:3.8-bullseye
 
   before_script:
     - pip install twine

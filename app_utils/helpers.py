@@ -63,13 +63,13 @@ def humanize_number(value, magnitude: str = None, precision: int = 1) -> str:
     value = float(value)
     power_map = {"t": 12, "b": 9, "m": 6, "k": 3, "": 0}
     if magnitude not in power_map:
-        if value >= 10 ** 12:
+        if value >= 10**12:
             magnitude = "t"
-        elif value >= 10 ** 9:
+        elif value >= 10**9:
             magnitude = "b"
-        elif value >= 10 ** 6:
+        elif value >= 10**6:
             magnitude = "m"
-        elif value >= 10 ** 3:
+        elif value >= 10**3:
             magnitude = "k"
         else:
             magnitude = ""

@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 cd utils-test-app
-tox -e py37-django32
+tox -e py38-django40
 cd ..
