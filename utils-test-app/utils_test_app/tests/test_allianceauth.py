@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+from redis import Redis
+
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import TestCase
@@ -8,6 +10,7 @@ from allianceauth.notifications.models import Notification
 from app_utils._app_settings import APP_UTILS_NOTIFY_THROTTLED_TIMEOUT
 from app_utils.allianceauth import (
     create_fake_user,
+    get_redis_client,
     notify_admins,
     notify_admins_throttled,
 )
@@ -86,3 +89,11 @@ class TestNotifyAdminsThrottled(TestCase):
         # then
         _, kwargs = spy_throttle.call_args
         self.assertEqual(kwargs["timeout"], 123)
+
+
+class TestGetRedisClient(TestCase):
+    def test_should_return_redis_client(self):
+        # when
+        client = get_redis_client()
+        # then
+        self.assertIsInstance(client, Redis)

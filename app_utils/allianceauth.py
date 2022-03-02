@@ -1,6 +1,9 @@
 from functools import partial
 
+from redis import Redis
+
 from django.contrib.auth.models import Permission, User
+from django.core.cache import caches
 
 from allianceauth.notifications import notify
 from allianceauth.views import NightModeRedirectView
@@ -9,6 +12,11 @@ from ._app_settings import APP_UTILS_NOTIFY_THROTTLED_TIMEOUT
 from .django import users_with_permission
 from .helpers import throttle
 from .testing import create_fake_user  # noqa: F401
+
+try:
+    import django_redis
+except ImportError:
+    django_redis = None
 
 
 def notify_admins(message: str, title: str, level: str = "info") -> None:
@@ -95,3 +103,12 @@ def notify_throttled(
 def is_night_mode(request) -> bool:
     """Returns True if the current user session is in night mode, else False"""
     return NightModeRedirectView.night_mode_state(request)
+
+
+def get_redis_client() -> Redis:
+    """Return configured redis client used for Django caching in Alliance Auth."""
+    try:
+        return django_redis.get_redis_connection("default")
+    except AttributeError:
+        default_cache = caches["default"]
+        return default_cache.get_master_client()

@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-## [1.12.0] - tbd
+## [1.13.0] - 2022-03-02
+
+### Added
+
+- allianceauth.get_redis_client(): Return the current redis client used for Django caching and works with the new and old django redis caching library
+
+## [1.12.0] - 2022-03-02
 
 ### Added
 
