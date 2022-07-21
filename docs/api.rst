@@ -95,6 +95,12 @@ Utilities for making it easier to write tests.
 .. automodule:: app_utils.testing
     :members:
 
+testdata_factories
+==================
+
+.. automodule:: app_utils.testdata_factories
+    :members:
+
 urls
 ========
 

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.14.0] - 2022-07-21
+
+### Added
+
+- Testdata factories generated with Factory Boy: `testdata_factories`
+
 ## [1.13.1] - 2022-06-18
 
 ### Changed
