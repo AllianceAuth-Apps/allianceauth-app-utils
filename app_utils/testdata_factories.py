@@ -7,6 +7,8 @@ Important: You need to add the dependency ``factory_boy`` to your test environme
 import factory
 import factory.fuzzy
 
+from django.db.models import Max
+
 from allianceauth.eveonline.models import (
     EveAllianceInfo,
     EveCharacter,
@@ -69,10 +71,17 @@ class EveAllianceInfoFactory(factory.django.DjangoModelFactory):
         model = EveAllianceInfo
         django_get_or_create = ("alliance_id", "alliance_name")
 
-    alliance_id = factory.Sequence(lambda n: 99_000_001 + n)
     alliance_name = factory.Faker("company")
     alliance_ticker = factory.LazyAttribute(lambda obj: obj.alliance_name[:4].upper())
     executor_corp_id = 0
+
+    @factory.lazy_attribute
+    def alliance_id(self):
+        last_id = (
+            EveAllianceInfo.objects.aggregate(Max("alliance_id"))["alliance_id__max"]
+            or 99_000_000
+        )
+        return last_id + 1
 
 
 class EveCorporationInfoFactory(factory.django.DjangoModelFactory):
@@ -82,12 +91,21 @@ class EveCorporationInfoFactory(factory.django.DjangoModelFactory):
         model = EveCorporationInfo
         django_get_or_create = ("corporation_id", "corporation_name")
 
-    corporation_id = factory.Sequence(lambda n: 98_000_001 + n)
     corporation_name = factory.Faker("company")
     corporation_ticker = factory.LazyAttribute(
         lambda obj: obj.corporation_name[:4].upper()
     )
     member_count = factory.fuzzy.FuzzyInteger(1000)
+
+    @factory.lazy_attribute
+    def corporation_id(self):
+        last_id = (
+            EveCorporationInfo.objects.aggregate(Max("corporation_id"))[
+                "corporation_id__max"
+            ]
+            or 98_000_000
+        )
+        return last_id + 1
 
     @factory.post_generation
     def create_alliance(obj, create, extracted, **kwargs):
@@ -104,7 +122,6 @@ class EveCharacterFactory(factory.django.DjangoModelFactory):
         django_get_or_create = ("character_id", "character_name")
         exclude = ("corporation",)
 
-    character_id = factory.Sequence(lambda n: 90_000_001 + n)
     character_name = factory.Faker("name")
     corporation = factory.SubFactory(EveCorporationInfoFactory)
     corporation_id = factory.LazyAttribute(lambda obj: obj.corporation.corporation_id)
@@ -114,6 +131,14 @@ class EveCharacterFactory(factory.django.DjangoModelFactory):
     corporation_ticker = factory.LazyAttribute(
         lambda obj: obj.corporation.corporation_ticker
     )
+
+    @factory.lazy_attribute
+    def character_id(self):
+        last_id = (
+            EveCharacter.objects.aggregate(Max("character_id"))["character_id__max"]
+            or 90_000_000
+        )
+        return last_id + 1
 
     @factory.lazy_attribute
     def alliance_id(self):
