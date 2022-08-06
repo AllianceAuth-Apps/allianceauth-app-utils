@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.14.1] - 2022-08-06
+
+### Changed
+
+- Improve EveOnline test factories
+- Adopt tox tests for AA3
+
 ## [1.14.0] - 2022-07-21
 
 ### Added
