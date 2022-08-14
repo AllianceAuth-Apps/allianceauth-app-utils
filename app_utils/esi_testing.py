@@ -91,7 +91,7 @@ class EsiEndpoint:
         category: name of ESI category
         method: name of ESI method
         primary_key: name of primary key (e.g. corporation_id) or tuple of 2 keys
-        needs_token: Wether the method requries a token
+        needs_token: Wether the method requires a token
         data: Data to be returned from this endpoint
         http_error_code: When provided will raise an HTTP exception with this code
         side_effect: A side effect to be triggered. Can be an exception of a function. Exceptions will be raised. Functions will be called with the args of the endpoint and it's result returned instead of "data". Return the object `SIDE_EFFECT_DEFAULT` in the function to return the endpoints normal data.
@@ -114,7 +114,7 @@ class EsiEndpoint:
 
         When an endpoint is only partially defined, one need to also provide testdata when creating a stub.
         """
-        return not self.data and not self.http_error_code and not self.side_effect
+        return self.data is None and not self.http_error_code and not self.side_effect
 
 
 SIDE_EFFECT_DEFAULT = object()
@@ -130,7 +130,7 @@ class _EsiMethod:
         self, endpoint: EsiEndpoint, testdata: dict, http_error: bool = False
     ) -> None:
         self._endpoint = endpoint
-        if endpoint.data:
+        if endpoint.data is not None:
             self._testdata = endpoint.data
         elif endpoint.side_effect or endpoint.http_error_code:
             self._testdata = None

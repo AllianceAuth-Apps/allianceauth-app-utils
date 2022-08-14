@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.14.2] - 2022-08-14
+
+### Fixed
+
+- EsiEndpoint can not be created with empty test data
+
 ## [1.14.1] - 2022-08-06
 
 ### Changed

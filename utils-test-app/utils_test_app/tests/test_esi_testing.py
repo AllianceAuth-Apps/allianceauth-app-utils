@@ -3,17 +3,16 @@ from unittest.mock import Mock
 
 from bravado.exception import HTTPNotFound
 
-from django.test import TestCase
-
 from app_utils.esi_testing import (
     SIDE_EFFECT_DEFAULT,
     BravadoResponseStub,
     EsiClientStub,
     EsiEndpoint,
 )
+from app_utils.testing import NoSocketsTestCase
 
 
-class TestBravadoResponseStub(TestCase):
+class TestBravadoResponseStub(NoSocketsTestCase):
     def test_create(self):
         # when
         obj = BravadoResponseStub(404, "dummy")
@@ -29,11 +28,11 @@ class TestBravadoResponseStub(TestCase):
         self.assertEqual(str(obj), "404 dummy")
 
 
-class TestEsiClientStub(TestCase):
+class TestEsiClientStub(NoSocketsTestCase):
     def setUp(self) -> None:
         self.testdata = {
             "Alpha": {
-                "get_cake": {"1": "cheesecake", "2": "strawberrycake"},
+                "get_cake": {"1": "cheesecake", "2": "strawberry_cake"},
                 "get_details": {"1": {"appointment": "2015-03-24T11:37:00Z"}},
                 "get_secret": {"1": "blue secret", "2": "red secret"},
                 "get_simple": "steak",
@@ -53,7 +52,7 @@ class TestEsiClientStub(TestCase):
         self.assertTrue(hasattr(self.stub.Alpha, "get_cake"))
         self.assertEqual(self.stub.Alpha.get_cake(cake_id=1).results(), "cheesecake")
         self.assertEqual(
-            self.stub.Alpha.get_cake(cake_id=2).results(), "strawberrycake"
+            self.stub.Alpha.get_cake(cake_id=2).results(), "strawberry_cake"
         )
         self.assertEqual(self.stub.Alpha.get_simple().results(), "steak")
         self.assertEqual(
@@ -168,7 +167,7 @@ class TestEsiClientStub(TestCase):
         # then
         self.assertEqual(result, "my mock was called")
 
-    def test_should_resturn_default_from_side_efect(self):
+    def test_should_return_default_from_side_effect(self):
         # given
         def my_side_effect(**kwargs):
             if kwargs["id"] == 2:
@@ -189,3 +188,13 @@ class TestEsiClientStub(TestCase):
         # then
         self.assertEqual(stub.Alpha.get_details(id=1).results(), "alpha")
         self.assertEqual(stub.Alpha.get_details(id=2).results(), "special")
+
+
+class TestEsiClientStub2(NoSocketsTestCase):
+    def test_can_initialize_with_empty_test_data(self):
+        # given
+        endpoints = [EsiEndpoint("Alpha", "get_simple", data=[])]
+        # when
+        stub = EsiClientStub.create_from_endpoints(endpoints)
+        # then
+        self.assertListEqual(stub.Alpha.get_simple().results(), [])
