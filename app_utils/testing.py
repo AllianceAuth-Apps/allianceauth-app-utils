@@ -135,13 +135,14 @@ def multi_assert_not_in(items: Iterable, container: Iterable) -> bool:
 
 
 def add_new_token(
-    user: User, character: EveCharacter, scopes: List[str] = None
+    user: User, character: EveCharacter, scopes: List[str] = None, owner_hash: str = random_string(28)
 ) -> Token:
     """Generate a new token for a user based on a character."""
     return _store_as_Token(
         _generate_token(
             character_id=character.character_id,
             character_name=character.character_name,
+            owner_hash=owner_hash,
             scopes=scopes,
         ),
         user,
@@ -151,6 +152,7 @@ def add_new_token(
 def _generate_token(
     character_id: int,
     character_name: str,
+    owner_hash: str = random_string(28),
     access_token: str = "access_token",
     refresh_token: str = "refresh_token",
     scopes: list = None,
@@ -177,7 +179,7 @@ def _generate_token(
         "ExpiresOn": dt_eveformat(timestamp_dt + dt.timedelta(seconds=expires_in)),
         "Scopes": " ".join(list(scopes)),
         "TokenType": "Character",
-        "CharacterOwnerHash": random_string(28),
+        "CharacterOwnerHash": owner_hash,
         "IntellectualProperty": "EVE",
     }
     return token
