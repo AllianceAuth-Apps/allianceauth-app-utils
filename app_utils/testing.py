@@ -135,7 +135,7 @@ def multi_assert_not_in(items: Iterable, container: Iterable) -> bool:
 
 
 def add_new_token(
-    user: User, character: EveCharacter, scopes: List[str] = None, owner_hash: str = random_string(28)
+    user: User, character: EveCharacter, scopes: List[str] = None, owner_hash: str = None
 ) -> Token:
     """Generate a new token for a user based on a character."""
     return _store_as_Token(
@@ -152,7 +152,7 @@ def add_new_token(
 def _generate_token(
     character_id: int,
     character_name: str,
-    owner_hash: str = random_string(28),
+    owner_hash: str = None,
     access_token: str = "access_token",
     refresh_token: str = "refresh_token",
     scopes: list = None,
@@ -168,6 +168,8 @@ def _generate_token(
             "esi-wallet.read_character_wallet.v1",
             "esi-universe.read_structures.v1",
         ]
+    if owner_hash is None:
+        owner_hash = random_string(28)
     token = {
         "access_token": access_token,
         "token_type": "Bearer",
