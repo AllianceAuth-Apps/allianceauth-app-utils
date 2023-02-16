@@ -7,8 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.15.0] - 2023-02-16
+
+### Added
+
+- You can now specify a custom owner hash when creating character tokens (@Maestro-Zacht)
+
 ### Changed
 
+- Removed support for Python 3.7
 - Different generator for alliance and corporation name that hopefully create less duplicates
 
 ## [1.14.2] - 2022-08-14
