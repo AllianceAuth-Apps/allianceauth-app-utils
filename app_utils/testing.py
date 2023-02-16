@@ -135,7 +135,10 @@ def multi_assert_not_in(items: Iterable, container: Iterable) -> bool:
 
 
 def add_new_token(
-    user: User, character: EveCharacter, scopes: List[str] = None, owner_hash: str = None
+    user: User,
+    character: EveCharacter,
+    scopes: List[str] = None,
+    owner_hash: str = None,
 ) -> Token:
     """Generate a new token for a user based on a character."""
     return _store_as_Token(
