@@ -71,7 +71,7 @@ class EveAllianceInfoFactory(factory.django.DjangoModelFactory):
         model = EveAllianceInfo
         django_get_or_create = ("alliance_id", "alliance_name")
 
-    alliance_name = factory.Faker("company")
+    alliance_name = factory.Faker("catch_phrase")
     alliance_ticker = factory.LazyAttribute(lambda obj: obj.alliance_name[:4].upper())
     executor_corp_id = 0
 
@@ -91,7 +91,7 @@ class EveCorporationInfoFactory(factory.django.DjangoModelFactory):
         model = EveCorporationInfo
         django_get_or_create = ("corporation_id", "corporation_name")
 
-    corporation_name = factory.Faker("company")
+    corporation_name = factory.Faker("catch_phrase")
     corporation_ticker = factory.LazyAttribute(
         lambda obj: obj.corporation_name[:4].upper()
     )

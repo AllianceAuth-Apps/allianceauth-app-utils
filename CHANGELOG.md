@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+### Changed
+
+- Different generator for alliance and corporation name that hopefully create less duplicates
+
 ## [1.14.2] - 2022-08-14
 
 ### Fixed

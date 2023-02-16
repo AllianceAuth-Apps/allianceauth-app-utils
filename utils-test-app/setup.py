@@ -13,7 +13,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 setup(
     name="utils-test-app",
     version="0.1.0",
-    python_requires="~=3.6",
+    python_requires="~=3.8",
     install_requires=["requests"],
     packages=find_packages(),
     include_package_data=True,
@@ -24,19 +24,4 @@ setup(
     url="",
     author="Erik Kalkoken",
     author_email="kalkoken87@gmail.com",
-    classifiers=[
-        "Environment :: Web Environment",
-        "Framework :: Django",
-        "Framework :: Django :: 2.2",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Topic :: Internet :: WWW/HTTP",
-        "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
-    ],
 )
