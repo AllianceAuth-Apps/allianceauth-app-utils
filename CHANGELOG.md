@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - admin.FieldFilterCountsMemory: Filter by field and show counts for admin site
 - admin.FieldFilterCountsDb: Filter by field and show counts for admin site
 - database.TableSizeMixin: Add a table size functionality to a Django Manager
+- Docs now support auto dark mode
 
 ### Changed
 
