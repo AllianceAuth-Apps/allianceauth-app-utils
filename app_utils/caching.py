@@ -1,3 +1,5 @@
+"""Utilities for caching objects and querysets."""
+
 import functools
 import hashlib
 from typing import Union

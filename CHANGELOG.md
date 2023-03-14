@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.16.0] - 2023-03-14
+
+### Added
+
+- admin.FieldFilterCountsMemory: Filter by field and show counts for admin site
+- admin.FieldFilterCountsDb: Filter by field and show counts for admin site
+- database.TableSizeMixin: Add a table size functionality to a Django Manager
+- Docs now support auto dark mode
+
+### Changed
+
+- Moved module description from docs to each module as doc string
+
 ## [1.15.0] - 2023-02-16
 
 ### Added

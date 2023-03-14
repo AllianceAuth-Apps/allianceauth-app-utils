@@ -1,3 +1,5 @@
+"""Helpers for working with ESI."""
+
 import datetime as dt
 import logging
 import random
@@ -32,6 +34,7 @@ class EsiOffline(EsiStatusException):
     """ESI is offline error."""
 
     def __init__(self):
+        """:meta private:"""
         super().__init__("ESI appears to be offline.")
 
 
@@ -39,6 +42,7 @@ class EsiErrorLimitExceeded(EsiStatusException):
     """ESI error limit exceeded error."""
 
     def __init__(self, retry_in: float) -> None:
+        """:meta private:"""
         super().__init__("The ESI error limit has been exceeded.")
         self._retry_in = float(retry_in)
 

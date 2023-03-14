@@ -1,3 +1,5 @@
+"""Improvement of the Django message class."""
+
 from django.contrib import messages
 from django.http import HttpRequest
 from django.utils.safestring import mark_safe

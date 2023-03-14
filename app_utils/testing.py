@@ -1,3 +1,5 @@
+"""Utilities for making it easier to write tests."""
+
 import datetime as dt
 import json
 import logging
@@ -401,7 +403,7 @@ def create_eve_character(
 
 
 def next_number(key=None) -> int:
-    """Generate consequetive numbers. Optionally numbers are generates for given key."""
+    """Generate consecutive numbers. Optionally numbers are generates for given key."""
     if key is None:
         key = "_general"
     try:
