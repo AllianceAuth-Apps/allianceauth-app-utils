@@ -1,3 +1,5 @@
+"""Utilities related to date and time."""
+
 import datetime as dt
 
 import pytz

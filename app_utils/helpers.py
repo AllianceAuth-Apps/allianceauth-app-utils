@@ -1,3 +1,5 @@
+"""General purpose helpers."""
+
 import hashlib
 import os
 import random

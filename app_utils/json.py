@@ -1,3 +1,5 @@
+"""JSON related utilities."""
+
 import datetime as dt
 import json
 from typing import Any
@@ -18,6 +20,9 @@ class JSONDateTimeDecoder(json.JSONDecoder):
     """
 
     def __init__(self, *args, **kwargs) -> None:
+        """
+        :meta private:
+        """
         json.JSONDecoder.__init__(
             self, object_hook=self.dict_to_object, *args, **kwargs
         )
@@ -50,6 +55,9 @@ class JSONDateTimeEncoder(json.JSONEncoder):
     """
 
     def default(self, o: Any) -> Any:
+        """
+        :meta private:
+        """
         if isinstance(o, dt.datetime):
             return {
                 "__type__": "datetime",

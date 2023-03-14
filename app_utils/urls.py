@@ -1,3 +1,5 @@
+"""Utilities related to URLs."""
+
 import re
 from urllib.parse import urljoin
 

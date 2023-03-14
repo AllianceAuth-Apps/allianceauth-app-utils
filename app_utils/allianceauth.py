@@ -1,3 +1,5 @@
+"""Utilities related to Alliance Auth."""
+
 from functools import partial
 
 from redis import Redis
@@ -44,7 +46,7 @@ def notify_admins_throttled(
     level: str = "info",
     timeout: int = None,
 ):
-    """Send notification to all admins, but limits the freqency
+    """Send notification to all admins, but limits the frequency
     for sending messages with the same message ID, e.g. to once per day.
 
     If this function is called during a timeout the notification will simply be ignored.
@@ -76,7 +78,7 @@ def notify_throttled(
     level: str = "info",
     timeout: int = None,
 ):
-    """Send notification to user, but limits the freqency
+    """Send notification to user, but limits the frequency
     for sending messages with the same message ID, e.g. to once per day.
 
     If this function is called during a timeout the notification will simply be ignored.

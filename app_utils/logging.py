@@ -1,3 +1,5 @@
+"""Utilities for logging."""
+
 import logging
 
 
@@ -16,10 +18,12 @@ class LoggerAddTag(logging.LoggerAdapter):
     """
 
     def __init__(self, my_logger, prefix):
+        """:meta private:"""
         super(LoggerAddTag, self).__init__(my_logger, {})
         self.prefix = prefix
 
     def process(self, msg, kwargs):
+        """:meta private:"""
         return "[%s] %s" % (self.prefix, msg), kwargs
 
 

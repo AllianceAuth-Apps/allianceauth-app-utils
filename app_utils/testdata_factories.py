@@ -1,5 +1,4 @@
-"""
-This module provides factories for generating test objects from Django and AA Models.
+"""This module provides factories for generating test objects from Django and AA Models.
 
 Important: You need to add the dependency ``factory_boy`` to your test environment.
 """

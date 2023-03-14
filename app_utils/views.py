@@ -1,3 +1,5 @@
+"""Utilities for supporting Django views."""
+
 from enum import Enum
 from http import HTTPStatus
 from typing import Optional
