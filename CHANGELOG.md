@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.17.0] - 2023-03-21
+
+### Added
+
+- `EsiStatus.raise_for_exception()` now raises `EsiDailyDowntime` so apps can differentiate normal offline vs. regular offline during daily downtime period. `EsiDailyDowntime` is a sub class of `EsiOffline`, so apps checking just for the later will not be affected
+
 ## [1.16.0] - 2023-03-14
 
 ### Added
