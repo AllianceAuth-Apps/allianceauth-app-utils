@@ -8,6 +8,7 @@ from celery.exceptions import Retry as CeleryRetry
 from django.test import TestCase
 
 from app_utils.esi import (
+    EsiDailyDowntime,
     EsiErrorLimitExceeded,
     EsiOffline,
     EsiStatus,
@@ -135,6 +136,24 @@ class TestEsiStatus(TestCase):
 
     @patch(MODULE_PATH + ".APPUTILS_ESI_ERROR_LIMIT_THRESHOLD", 25)
     def test_raise_for_status_3(self):
+        """When ESI is offline, then raise exception"""
+        obj = EsiStatus(
+            False, error_limit_remain=99, error_limit_reset=20, is_daily_downtime=True
+        )
+        with self.assertRaises(EsiDailyDowntime):
+            obj.raise_for_status()
+
+    @patch(MODULE_PATH + ".APPUTILS_ESI_ERROR_LIMIT_THRESHOLD", 25)
+    def test_should_raise_for_status_3a(self):
+        """When ESI is offline, then raise offline type exception"""
+        obj = EsiStatus(
+            False, error_limit_remain=99, error_limit_reset=20, is_daily_downtime=True
+        )
+        with self.assertRaises(EsiOffline):
+            obj.raise_for_status()
+
+    @patch(MODULE_PATH + ".APPUTILS_ESI_ERROR_LIMIT_THRESHOLD", 25)
+    def test_raise_for_status_4(self):
         """When ESI error limit is exceeded, then raise exception"""
         obj = EsiStatus(True, error_limit_remain=15, error_limit_reset=20)
         with self.assertRaises(EsiErrorLimitExceeded):
@@ -325,15 +344,17 @@ class TestFetchEsiStatus(TestCase):
 
     @patch(MODULE_PATH + ".APPUTILS_ESI_DAILY_DOWNTIME_START", 11.0)
     @patch(MODULE_PATH + ".APPUTILS_ESI_DAILY_DOWNTIME_END", 11.25)
-    def test_should_report_offline_during_esi_downtime_1(self, requests_mocker):
+    def test_should_report_offline_during_esi_downtime(self, requests_mocker):
         """When during ESI daily downtime, report ESI as offline."""
         # when
-        my_now = dt.datetime(2021, 6, 29, 11, 1)
         with patch(MODULE_PATH + ".now") as mock_now:
-            mock_now.return_value = my_now
+            mock_now.return_value = dt.datetime(
+                2021, 6, 29, 11, 1, tzinfo=dt.timezone.utc
+            )
             status = fetch_esi_status()
         # then
         self.assertFalse(status.is_online)
+        self.assertTrue(status.is_daily_downtime)
 
     @patch(MODULE_PATH + ".APPUTILS_ESI_DAILY_DOWNTIME_START", 11.0)
     @patch(MODULE_PATH + ".APPUTILS_ESI_DAILY_DOWNTIME_END", 11.25)
@@ -359,6 +380,7 @@ class TestFetchEsiStatus(TestCase):
             status = fetch_esi_status(ignore_daily_downtime=True)
         # then
         self.assertTrue(status.is_online)
+        self.assertTrue(status.is_daily_downtime)
 
     def test_should_report_offline_on_connection_timeout(self, requests_mocker):
         # given

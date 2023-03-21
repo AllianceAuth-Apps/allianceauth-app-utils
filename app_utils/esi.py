@@ -38,6 +38,15 @@ class EsiOffline(EsiStatusException):
         super().__init__("ESI appears to be offline.")
 
 
+class EsiDailyDowntime(EsiOffline):
+    """ESI is offline due to daily downtime."""
+
+    def __init__(self):
+        """:meta private:"""
+        super().__init__()
+        self.message = "Assuming ESI is offline during it's daily downtime."
+
+
 class EsiErrorLimitExceeded(EsiStatusException):
     """ESI error limit exceeded error."""
 
@@ -62,8 +71,10 @@ class EsiStatus:
         is_online: bool,
         error_limit_remain: int = None,
         error_limit_reset: int = None,
+        is_daily_downtime: bool = None,
     ) -> None:
         self._is_online = bool(is_online)
+        self._is_daily_downtime = is_daily_downtime
         if error_limit_remain is None or error_limit_reset is None:
             self._error_limit_remain = None
             self._error_limit_reset = None
@@ -75,6 +86,11 @@ class EsiStatus:
     def is_ok(self) -> bool:
         """True if ESI is online and below error limit, else False."""
         return self.is_online and not self.is_error_limit_exceeded
+
+    @property
+    def is_daily_downtime(self) -> bool:
+        """True if status was created during daily downtime time frame."""
+        return self._is_daily_downtime
 
     @property
     def is_online(self) -> bool:
@@ -114,6 +130,8 @@ class EsiStatus:
     def raise_for_status(self):
         """Raise an exception if ESI if offline or the error limit is exceeded."""
         if not self.is_online:
+            if self.is_daily_downtime:
+                raise EsiDailyDowntime()
             raise EsiOffline()
         if self.is_error_limit_exceeded:
             raise EsiErrorLimitExceeded(retry_in=self.error_limit_reset_w_jitter())
@@ -126,16 +144,14 @@ def fetch_esi_status(ignore_daily_downtime: bool = False) -> EsiStatus:
         ignore_daily_downtime: When True will always make a request to ESI \
             even during the daily downtime
     """
-    if not ignore_daily_downtime:
-        downtime_start = _calc_downtime(APPUTILS_ESI_DAILY_DOWNTIME_START)
-        downtime_end = _calc_downtime(APPUTILS_ESI_DAILY_DOWNTIME_END)
-        if now() >= downtime_start and now() <= downtime_end:
-            return EsiStatus(is_online=False)
+    is_daily_downtime = _is_daily_downtime()
+    if not ignore_daily_downtime and is_daily_downtime:
+        return EsiStatus(is_online=False, is_daily_downtime=True)
     try:
         r = _request_esi_status()
     except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
         logger.warning("Network error when trying to call ESI", exc_info=True)
-        return EsiStatus(is_online=False)
+        return EsiStatus(is_online=False, is_daily_downtime=is_daily_downtime)
     if not r.ok:
         is_online = False
     else:
@@ -148,7 +164,7 @@ def fetch_esi_status(ignore_daily_downtime: bool = False) -> EsiStatus:
         reset = int(r.headers.get("X-Esi-Error-Limit-Reset"))
     except TypeError:
         logger.warning("Failed to parse HTTP headers: %s", r.headers)
-        return EsiStatus(is_online=is_online)
+        return EsiStatus(is_online=is_online, is_daily_downtime=is_daily_downtime)
     logger.debug(
         "ESI status: is_online: %s, error_limit_remain = %s, error_limit_reset = %s",
         is_online,
@@ -156,8 +172,18 @@ def fetch_esi_status(ignore_daily_downtime: bool = False) -> EsiStatus:
         reset,
     )
     return EsiStatus(
-        is_online=is_online, error_limit_remain=remain, error_limit_reset=reset
+        is_online=is_online,
+        error_limit_remain=remain,
+        error_limit_reset=reset,
+        is_daily_downtime=is_daily_downtime,
     )
+
+
+def _is_daily_downtime() -> bool:
+    """Determine if we currently are in the daily downtime period."""
+    downtime_start = _calc_downtime(APPUTILS_ESI_DAILY_DOWNTIME_START)
+    downtime_end = _calc_downtime(APPUTILS_ESI_DAILY_DOWNTIME_END)
+    return now() >= downtime_start and now() <= downtime_end
 
 
 def _calc_downtime(hours_float: float) -> dt.datetime:
