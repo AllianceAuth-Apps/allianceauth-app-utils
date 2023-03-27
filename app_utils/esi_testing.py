@@ -44,18 +44,30 @@ class BravadoOperationStub:
         def __init__(self, also_return_response):
             self.also_return_response = also_return_response
 
-    class ResponseStub:
-        def __init__(self, headers):
-            self.headers = headers
-
-    def __init__(self, data, headers: dict = None, also_return_response: bool = False):
+    def __init__(
+        self,
+        data,
+        headers: dict = None,
+        also_return_response: bool = False,
+        status_code=200,
+        reason="OK",
+    ):
         self._data = data
         self._headers = headers if headers else {"x-pages": 1}
+        self._status_code = status_code
+        self._reason = reason
         self.request_config = BravadoOperationStub.RequestConfig(also_return_response)
 
     def result(self, **kwargs):
         if self.request_config.also_return_response:
-            return [self._data, self.ResponseStub(self._headers)]
+            return [
+                self._data,
+                BravadoResponseStub(
+                    headers=self._headers,
+                    status_code=self._status_code,
+                    reason=self._reason,
+                ),
+            ]
         return self._data
 
     def results(self, **kwargs):
