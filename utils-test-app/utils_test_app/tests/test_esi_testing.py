@@ -5,6 +5,7 @@ from bravado.exception import HTTPNotFound
 
 from app_utils.esi_testing import (
     SIDE_EFFECT_DEFAULT,
+    BravadoOperationStub,
     BravadoResponseStub,
     EsiClientStub,
     EsiEndpoint,
@@ -26,6 +27,54 @@ class TestBravadoResponseStub(NoSocketsTestCase):
     def test_str(self):
         obj = BravadoResponseStub(404, "dummy")
         self.assertEqual(str(obj), "404 dummy")
+
+
+class TestBravadoOperationStub(NoSocketsTestCase):
+    def test_should_return_data_only(self):
+        # given
+        data = [1, 2, 3]
+        obj = BravadoOperationStub(data)
+        # when
+        result = obj.result()
+        # then
+        self.assertEqual(result, data)
+
+    def test_should_return_data_and_response(self):
+        # given
+        data = [1, 2, 3]
+        obj = BravadoOperationStub(data, also_return_response=True)
+        # when
+        result, response = obj.result()
+        # then
+        self.assertEqual(result, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.reason, "OK")
+
+    def test_should_return_data_and_response_with_custom_status(self):
+        # given
+        data = [1, 2, 3]
+        obj = BravadoOperationStub(
+            data, also_return_response=True, status_code=404, reason="NOT FOUND"
+        )
+        # when
+        result, response = obj.result()
+        # then
+        self.assertEqual(result, data)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.reason, "NOT FOUND")
+
+    def test_should_return_data_and_response_with_headers(self):
+        # given
+        data = [1, 2, 3]
+        obj = BravadoOperationStub(
+            data, also_return_response=True, headers={"alpha": 1}
+        )
+        # when
+        result, response = obj.result()
+        # then
+        self.assertEqual(result, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers, {"alpha": 1})
 
 
 class TestEsiClientStub(NoSocketsTestCase):

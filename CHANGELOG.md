@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.17.1] - 2023-03-27
+
+### Changed
+
+- Added status_code and reason to BravadoResponseStub
+- Now returning same BravadoResponseStub instead of replaced ResponseStub from BravadoOperationStub
+
 ## [1.17.0] - 2023-03-21
 
 ### Added
