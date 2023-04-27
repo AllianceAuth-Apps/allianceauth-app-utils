@@ -7,7 +7,7 @@ import os
 import re
 import socket
 from itertools import count
-from typing import Iterable, List, Tuple
+from typing import Any, Iterable, List, Optional, Tuple
 
 from django.contrib.auth.models import Group, User
 from django.db import models
@@ -30,7 +30,7 @@ from .esi_testing import BravadoOperationStub, BravadoResponseStub  # noqa: F401
 from .helpers import random_string
 
 
-def generate_invalid_pk(MyModel: models.Model) -> int:
+def generate_invalid_pk(MyModel: Any) -> int:
     """return an invalid PK for the given Django model"""
     pk_max = MyModel.objects.aggregate(models.Max("pk"))["pk__max"]
     return pk_max + 1 if pk_max else 1
@@ -105,7 +105,7 @@ def response_text(response: HttpResponse) -> str:
     return response.content.decode("utf-8")
 
 
-def json_response_to_python(response: JsonResponse) -> object:
+def json_response_to_python(response: JsonResponse) -> Any:
     """Convert JSON response into Python object."""
     return json.loads(response_text(response))
 
@@ -139,8 +139,8 @@ def multi_assert_not_in(items: Iterable, container: Iterable) -> bool:
 def add_new_token(
     user: User,
     character: EveCharacter,
-    scopes: List[str] = None,
-    owner_hash: str = None,
+    scopes: Optional[List[str]] = None,
+    owner_hash: Optional[str] = None,
 ) -> Token:
     """Generate a new token for a user based on a character."""
     return _store_as_Token(
@@ -157,11 +157,11 @@ def add_new_token(
 def _generate_token(
     character_id: int,
     character_name: str,
-    owner_hash: str = None,
+    owner_hash: Optional[str] = None,
     access_token: str = "access_token",
     refresh_token: str = "refresh_token",
-    scopes: list = None,
-    timestamp_dt: object = None,
+    scopes: Optional[list] = None,
+    timestamp_dt: Optional[dt.datetime] = None,
     expires_in: int = 1200,
 ) -> dict:
     """Generates the input to create a new SSO test token"""
@@ -216,7 +216,9 @@ def _store_as_Token(token: dict, user: object) -> Token:
 
 
 def create_user_from_evecharacter(
-    character_id: int, permissions: List[str] = None, scopes: List[str] = None
+    character_id: int,
+    permissions: Optional[List[str]] = None,
+    scopes: Optional[List[str]] = None,
 ) -> Tuple[User, CharacterOwnership]:
     """Create new allianceauth user from EveCharacter object.
 
@@ -240,7 +242,7 @@ def add_character_to_user(
     user: User,
     character: EveCharacter,
     is_main: bool = False,
-    scopes: List[str] = None,
+    scopes: Optional[List[str]] = None,
     disconnect_signals: bool = False,
 ) -> CharacterOwnership:
     """Generates a token for the given Eve character and makes the given user it's owner
@@ -253,7 +255,7 @@ def add_character_to_user(
         disconnect_signals: Will disconnect signals temporarily when True
     """
     if not scopes:
-        scopes = "publicData"
+        scopes = ["publicData"]
 
     if disconnect_signals:
         AuthUtils.disconnect_signals()
@@ -307,12 +309,12 @@ def add_character_to_user_2(
 def create_fake_user(
     character_id: int,
     character_name: str,
-    corporation_id: int = None,
-    corporation_name: str = None,
-    corporation_ticker: str = None,
-    alliance_id: int = None,
-    alliance_name: str = None,
-    permissions: List[str] = None,
+    corporation_id: Optional[int] = None,
+    corporation_name: Optional[str] = None,
+    corporation_ticker: Optional[str] = None,
+    alliance_id: Optional[int] = None,
+    alliance_name: Optional[str] = None,
+    permissions: Optional[List[str]] = None,
 ) -> User:
     """Create a fake user incl. main character and (optional) permissions.
 
@@ -343,7 +345,7 @@ def create_fake_user(
     return user
 
 
-def create_authgroup(states: Iterable[State] = None, **kwargs) -> Group:
+def create_authgroup(states: Optional[Iterable[State]] = None, **kwargs) -> Group:
     """Create Group object with additional Auth related properties for tests."""
     if "name" not in kwargs:
         kwargs["name"] = f"Test Group #{next_number('authgroup')}"
@@ -359,11 +361,11 @@ def create_authgroup(states: Iterable[State] = None, **kwargs) -> Group:
 
 def create_state(
     priority: int,
-    permissions: Iterable[str] = None,
-    member_characters: Iterable[EveCharacter] = None,
-    member_corporations: Iterable[EveCorporationInfo] = None,
-    member_alliances: Iterable[EveAllianceInfo] = None,
-    member_factions: Iterable[EveFactionInfo] = None,
+    permissions: Optional[Iterable[str]] = None,
+    member_characters: Optional[Iterable[EveCharacter]] = None,
+    member_corporations: Optional[Iterable[EveCorporationInfo]] = None,
+    member_alliances: Optional[Iterable[EveAllianceInfo]] = None,
+    member_factions: Optional[Iterable[EveFactionInfo]] = None,
     **kwargs,
 ) -> State:
     """Create a State object for tests."""

@@ -4,7 +4,7 @@ import inspect
 from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass
-from typing import Any, Callable, List, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 from bravado.exception import (
     HTTPBadGateway,
@@ -47,7 +47,7 @@ class BravadoOperationStub:
     def __init__(
         self,
         data,
-        headers: dict = None,
+        headers: Optional[dict] = None,
         also_return_response: bool = False,
         status_code=200,
         reason="OK",
@@ -74,7 +74,7 @@ class BravadoOperationStub:
         return self.result(**kwargs)
 
 
-def build_http_error(http_code: int, text: str = None) -> Exception:
+def build_http_error(http_code: int, text: Optional[str] = None) -> Exception:
     """Build a HTTP exception for django-esi from given http code."""
     exc_map = {
         400: HTTPBadRequest,
@@ -114,7 +114,7 @@ class EsiEndpoint:
     primary_key: Union[str, Tuple[str, str], None] = None
     needs_token: bool = False
     data: Union[dict, list, str, None] = None
-    http_error_code: int = None
+    http_error_code: Optional[int] = None
     side_effect: Union[Callable, Exception, None] = None
 
     def __str__(self) -> str:
@@ -139,7 +139,7 @@ class _EsiMethod:
     """An ESI method that can be called from the ESI client."""
 
     def __init__(
-        self, endpoint: EsiEndpoint, testdata: dict, http_error: bool = False
+        self, endpoint: EsiEndpoint, testdata: Optional[dict], http_error: bool = False
     ) -> None:
         self._endpoint = endpoint
         if endpoint.data is not None:
@@ -151,9 +151,9 @@ class _EsiMethod:
                 self._testdata = testdata[self._endpoint.category][
                     self._endpoint.method
                 ]
-            except KeyError:
+            except (KeyError, TypeError):
                 text = (
-                    f"{self._endpoint.category}.{self._endpoint.method}: No test data",
+                    f"{self._endpoint.category}.{self._endpoint.method}: No test data"
                 )
                 raise build_http_error(404, text) from None
         self._http_error = http_error
@@ -212,7 +212,7 @@ class _EsiMethod:
                     result = self._convert_values(self._testdata[pk_value])
             else:
                 result = self._convert_values(self._testdata)
-        except KeyError:
+        except (KeyError, TypeError):
             text = (
                 f"{self._endpoint.category}.{self._endpoint.method}: "
                 f"No test data for {self._endpoint.primary_key} = {pk_value}"
@@ -246,7 +246,10 @@ class EsiClientStub:
     """Stub for replacing a django-esi client in tests."""
 
     def __init__(
-        self, testdata: dict, endpoints: List[EsiEndpoint], http_error: bool = False
+        self,
+        testdata: Optional[dict],
+        endpoints: List[EsiEndpoint],
+        http_error: bool = False,
     ) -> None:
         self._testdata = testdata
         self._http_error = http_error
@@ -259,7 +262,7 @@ class EsiClientStub:
         if endpoint.requires_testdata:
             try:
                 _ = self._testdata[endpoint.category][endpoint.method]
-            except KeyError:
+            except (KeyError, TypeError):
                 raise ValueError(f"No data provided for {endpoint}")
 
     def _add_endpoint(self, endpoint: EsiEndpoint):

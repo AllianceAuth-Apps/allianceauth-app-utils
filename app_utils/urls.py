@@ -1,6 +1,7 @@
 """Utilities related to URLs."""
 
 import re
+from typing import Optional
 from urllib.parse import urljoin
 
 from django.conf import settings
@@ -9,7 +10,7 @@ from django.urls import reverse
 
 
 # old: get_absolute_url
-def reverse_absolute(viewname: str, args: list = None) -> str:
+def reverse_absolute(viewname: str, args: Optional[list] = None) -> str:
     """returns absolute URL for given url"""
     return urljoin(site_absolute_url(), reverse(viewname, args=args))
 

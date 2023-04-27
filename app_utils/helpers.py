@@ -4,7 +4,7 @@ import hashlib
 import os
 import random
 import string
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from django.core.cache import cache
 
@@ -55,7 +55,7 @@ class AttrDict(dict):
         self.__dict__ = self
 
 
-def humanize_number(value, magnitude: str = None, precision: int = 1) -> str:
+def humanize_number(value, magnitude: Optional[str] = None, precision: int = 1) -> str:
     """Return the value in humanized format, e.g. `1234` becomes `1.2k`
 
     Args:
