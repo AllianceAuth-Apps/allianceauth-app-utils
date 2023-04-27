@@ -4,7 +4,7 @@ import hashlib
 import os
 import random
 import string
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from django.core.cache import cache
 
@@ -55,7 +55,7 @@ class AttrDict(dict):
         self.__dict__ = self
 
 
-def humanize_number(value, magnitude: str = None, precision: int = 1) -> str:
+def humanize_number(value, magnitude: Optional[str] = None, precision: int = 1) -> str:
     """Return the value in humanized format, e.g. `1234` becomes `1.2k`
 
     Args:
@@ -78,7 +78,7 @@ def humanize_number(value, magnitude: str = None, precision: int = 1) -> str:
     return f"{value / 10 ** power_map[magnitude]:,.{precision}f}{magnitude}"
 
 
-def throttle(func: Callable, context_id: str, timeout: int) -> Any:
+def throttle(func: Callable, context_id: str, timeout: Optional[int]) -> Any:
     """Call a function, but limit repeated calls with a timeout, e.g. once per day.
 
     When a repeated call falls within the timeout the call will simply be ignored.

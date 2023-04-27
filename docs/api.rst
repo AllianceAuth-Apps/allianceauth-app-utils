@@ -94,6 +94,12 @@ testdata_factories
 .. automodule:: app_utils.testdata_factories
     :members:
 
+testrunners
+===========
+
+.. automodule:: app_utils.testrunners
+    :members:
+
 urls
 ========
 

@@ -3,9 +3,12 @@
 Important: You need to add the dependency ``factory_boy`` to your test environment.
 """
 
+from typing import Generic, TypeVar
+
 import factory
 import factory.fuzzy
 
+from django.contrib.auth import get_user_model
 from django.db.models import Max
 
 from allianceauth.eveonline.models import (
@@ -17,10 +20,19 @@ from allianceauth.tests.auth_utils import AuthUtils
 
 from .testing import add_character_to_user
 
+T = TypeVar("T")
+User = get_user_model()
+
+
+class BaseMetaFactory(Generic[T], factory.base.FactoryMetaClass):
+    def __call__(cls, *args, **kwargs) -> T:
+        return super().__call__(*args, **kwargs)
+
+
 # django
 
 
-class UserFactory(factory.django.DjangoModelFactory):
+class UserFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[User]):
     """Generate a User object.
 
     Args:
@@ -29,7 +41,7 @@ class UserFactory(factory.django.DjangoModelFactory):
     """
 
     class Meta:
-        model = "auth.User"
+        model = User
         django_get_or_create = ("username",)
         exclude = ("_generated_name",)
 
@@ -63,7 +75,9 @@ class UserFactory(factory.django.DjangoModelFactory):
 # auth
 
 
-class EveAllianceInfoFactory(factory.django.DjangoModelFactory):
+class EveAllianceInfoFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[EveAllianceInfo]
+):
     """Generate an EveAllianceInfo object."""
 
     class Meta:
@@ -83,7 +97,9 @@ class EveAllianceInfoFactory(factory.django.DjangoModelFactory):
         return last_id + 1
 
 
-class EveCorporationInfoFactory(factory.django.DjangoModelFactory):
+class EveCorporationInfoFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[EveCorporationInfo]
+):
     """Generate an EveCorporationInfo object."""
 
     class Meta:
@@ -113,7 +129,9 @@ class EveCorporationInfoFactory(factory.django.DjangoModelFactory):
         obj.alliance = EveAllianceInfoFactory(executor_corp_id=obj.corporation_id)
 
 
-class EveCharacterFactory(factory.django.DjangoModelFactory):
+class EveCharacterFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[EveCharacter]
+):
     """Generate an EveCharacter object."""
 
     class Meta:

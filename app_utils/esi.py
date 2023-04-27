@@ -69,9 +69,9 @@ class EsiStatus:
     def __init__(
         self,
         is_online: bool,
-        error_limit_remain: int = None,
-        error_limit_reset: int = None,
-        is_daily_downtime: bool = None,
+        error_limit_remain: Optional[int] = None,
+        error_limit_reset: Optional[int] = None,
+        is_daily_downtime: bool = False,
     ) -> None:
         self._is_online = bool(is_online)
         self._is_daily_downtime = is_daily_downtime
@@ -119,7 +119,7 @@ class EsiStatus:
             and self.error_limit_remain <= APPUTILS_ESI_ERROR_LIMIT_THRESHOLD
         )
 
-    def error_limit_reset_w_jitter(self, max_jitter: int = None) -> int:
+    def error_limit_reset_w_jitter(self, max_jitter: Optional[int] = None) -> int:
         """Calc seconds to retry in order to reach next error window incl. jitter."""
         if self.error_limit_reset is None:
             return 0
@@ -156,12 +156,12 @@ def fetch_esi_status(ignore_daily_downtime: bool = False) -> EsiStatus:
         is_online = False
     else:
         try:
-            is_online = False if r.json().get("vip") else True
+            is_online = not r.json().get("vip")
         except ValueError:
             is_online = False
     try:
-        remain = int(r.headers.get("X-Esi-Error-Limit-Remain"))
-        reset = int(r.headers.get("X-Esi-Error-Limit-Reset"))
+        remain = int(r.headers.get("X-Esi-Error-Limit-Remain"))  # type: ignore
+        reset = int(r.headers.get("X-Esi-Error-Limit-Reset"))  # type: ignore
     except TypeError:
         logger.warning("Failed to parse HTTP headers: %s", r.headers)
         return EsiStatus(is_online=is_online, is_daily_downtime=is_daily_downtime)

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.18.0] - 2023-04-27
+
+### Added
+
+- `testrunners.TimedTestRunner`: Custom test runner that can add duration measurements to all tests and shows slowest tests in a summary
+
+### Changed
+
+- Improved type annotations
+
 ## [1.17.1] - 2023-03-27
 
 ### Changed

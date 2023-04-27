@@ -80,13 +80,15 @@ def bootstrap_glyph_2_html(glyph_name, tooltip_text=None, color="initial"):
     if tooltip_text:
         tooltip_html = mark_safe(
             'aria-hidden="true" data-toggle="tooltip" data-placement="top" '
-            'title="{}"'.format(tooltip_text)
+            f'title="{tooltip_text}"'
         )
     else:
         tooltip_html = ""
     return format_html(
-        '<span class="glyphicon glyphicon-{}"'
-        ' style="color:{};"{}></span>'.format(glyph_name.lower(), color, tooltip_html)
+        '<span class="glyphicon glyphicon-{}" style="color:{};"{}></span>',
+        glyph_name.lower(),
+        color,
+        tooltip_html,
     )
 
 
@@ -95,8 +97,8 @@ def bootstrap_icon_plus_name_html(
     name,
     size: int = DEFAULT_ICON_SIZE,
     avatar: bool = False,
-    url: str = None,
-    text: str = None,
+    url: Optional[str] = None,
+    text: Optional[str] = None,
 ) -> str:
     """returns HTML to display an icon next to a name. Can also be a link."""
     name_html = link_html(url, name, new_window=False) if url else name
@@ -131,7 +133,7 @@ def fontawesome_link_button_html(
     url: str,
     fa_code: str,
     button_type: str,
-    tooltip: str = None,
+    tooltip: Optional[str] = None,
     disabled: bool = False,
 ) -> str:
     """create fontawesome button and return HTML"""
@@ -190,7 +192,9 @@ def humanize_value(value: float, precision: int = 2) -> str:
     return f"{value:,.{precision}f}"
 
 
-def image_html(src: str, classes: list = None, size: int = None) -> str:
+def image_html(
+    src: str, classes: Optional[list] = None, size: Optional[int] = None
+) -> str:
     """returns the HTML for an image with optional classes and size"""
     classes_str = format_html('class="{}"', (" ".join(classes)) if classes else "")
     size_html = (
@@ -225,7 +229,6 @@ def yesnonone_str(value: Optional[bool]) -> str:
     """returns yes/no/none for boolean as string and with localization"""
     if value is True:
         return _("yes")
-    elif value is False:
+    if value is False:
         return _("no")
-    else:
-        return ""
+    return ""

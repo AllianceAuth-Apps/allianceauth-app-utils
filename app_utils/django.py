@@ -1,5 +1,7 @@
 """Extending the Django utilities."""
 
+from typing import Optional
+
 from django.apps import apps
 from django.contrib.auth.models import Permission, User
 from django.db import models
@@ -37,7 +39,7 @@ def users_with_permission(
     return users_qs.distinct()
 
 
-def admin_boolean_icon_html(value) -> str:
+def admin_boolean_icon_html(value) -> Optional[str]:
     """Variation of the admin boolean type, which returns the HTML for creating
     the usual `True` and `False` icons.
     But returns `None` for `None`, instead of the question mark."""

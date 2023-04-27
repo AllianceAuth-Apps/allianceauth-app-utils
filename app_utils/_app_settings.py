@@ -1,6 +1,6 @@
 """Settings configuration for app_utils."""
 
-from .django import clean_setting
+from .app_settings import clean_setting
 
 APP_UTILS_NOTIFY_THROTTLED_TIMEOUT = clean_setting(
     "APP_UTILS_NOTIFY_THROTTLED_TIMEOUT", 86400

@@ -2,7 +2,7 @@
 
 import functools
 import hashlib
-from typing import Union
+from typing import Any, Optional
 
 from django.core.cache import cache
 from django.db import models
@@ -14,9 +14,9 @@ class ObjectCacheMixin:
     def get_cached(
         self,
         pk,
-        timeout: Union[int, float] = None,
-        select_related: str = None,
-    ) -> models.Model:
+        timeout: Optional[int] = None,
+        select_related: Optional[str] = None,
+    ) -> Any:
         """Will return the requested object either from DB or from cache
 
         Args:
@@ -49,7 +49,9 @@ class ObjectCacheMixin:
             self._create_object_cache_key(pk, select_related), func, timeout
         )
 
-    def _create_object_cache_key(self, pk, select_related: str = None) -> str:
+    def _create_object_cache_key(
+        self, pk: int, select_related: Optional[str] = None
+    ) -> str:
         suffix = (
             hashlib.md5(select_related.encode("utf-8")).hexdigest()
             if select_related
@@ -62,14 +64,12 @@ class ObjectCacheMixin:
             f"_{suffix}" if suffix else "",
         )
 
-    def _fetch_object_for_cache(self, pk, select_related: str = None):
+    def _fetch_object_for_cache(self, pk, select_related: Optional[str] = None):
         qs = self.select_related(select_related) if select_related else self
         return qs.get(pk=pk)
 
 
-def cached_queryset(
-    queryset: models.QuerySet, key: str, timeout: Union[int, float]
-) -> models.QuerySet:
+def cached_queryset(queryset: models.QuerySet, key: str, timeout: int) -> Any:
     """caches the given queryset
 
     Args:
