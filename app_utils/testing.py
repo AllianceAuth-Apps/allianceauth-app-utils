@@ -84,7 +84,8 @@ def set_test_logger(logger_name: str, name: str) -> object:
     f_format = logging.Formatter(
         "%(asctime)s - %(levelname)s - %(module)s:%(funcName)s - %(message)s"
     )
-    f_handler = logging.FileHandler("{}.log".format(os.path.splitext(name)[0]), "w+")
+    file_name = os.path.splitext(name)[0]
+    f_handler = logging.FileHandler(f"{file_name}.log", "w+")
     f_handler.setFormatter(f_format)
     my_logger = logging.getLogger(logger_name)
     my_logger.level = logging.DEBUG
@@ -409,10 +410,10 @@ def next_number(key=None) -> int:
     if key is None:
         key = "_general"
     try:
-        return next_number._counter[key].__next__()
+        return next(next_number._counter[key])
     except AttributeError:
         next_number._counter = dict()
     except KeyError:
         pass
     next_number._counter[key] = count(start=1)
-    return next_number._counter[key].__next__()
+    return next(next_number._counter[key])

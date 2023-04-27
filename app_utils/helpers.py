@@ -78,7 +78,7 @@ def humanize_number(value, magnitude: Optional[str] = None, precision: int = 1) 
     return f"{value / 10 ** power_map[magnitude]:,.{precision}f}{magnitude}"
 
 
-def throttle(func: Callable, context_id: str, timeout: int) -> Any:
+def throttle(func: Callable, context_id: str, timeout: Optional[int]) -> Any:
     """Call a function, but limit repeated calls with a timeout, e.g. once per day.
 
     When a repeated call falls within the timeout the call will simply be ignored.

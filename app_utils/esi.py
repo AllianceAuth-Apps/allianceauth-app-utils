@@ -156,7 +156,7 @@ def fetch_esi_status(ignore_daily_downtime: bool = False) -> EsiStatus:
         is_online = False
     else:
         try:
-            is_online = False if r.json().get("vip") else True
+            is_online = not r.json().get("vip")
         except ValueError:
             is_online = False
     try:

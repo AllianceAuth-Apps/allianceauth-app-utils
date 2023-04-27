@@ -1,6 +1,7 @@
 """Utilities related to Alliance Auth."""
 
 from functools import partial
+from typing import Optional
 
 from redis import Redis
 
@@ -44,7 +45,7 @@ def notify_admins_throttled(
     message: str,
     title: str,
     level: str = "info",
-    timeout: int = None,
+    timeout: Optional[int] = None,
 ):
     """Send notification to all admins, but limits the frequency
     for sending messages with the same message ID, e.g. to once per day.
@@ -76,7 +77,7 @@ def notify_throttled(
     title: str,
     message: str,
     level: str = "info",
-    timeout: int = None,
+    timeout: Optional[int] = None,
 ):
     """Send notification to user, but limits the frequency
     for sending messages with the same message ID, e.g. to once per day.
@@ -113,4 +114,4 @@ def get_redis_client() -> Redis:
         return django_redis.get_redis_connection("default")
     except AttributeError:
         default_cache = caches["default"]
-        return default_cache.get_master_client()
+        return default_cache.get_master_client()  # type: ignore

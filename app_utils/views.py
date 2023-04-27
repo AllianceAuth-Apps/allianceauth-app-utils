@@ -80,13 +80,15 @@ def bootstrap_glyph_2_html(glyph_name, tooltip_text=None, color="initial"):
     if tooltip_text:
         tooltip_html = mark_safe(
             'aria-hidden="true" data-toggle="tooltip" data-placement="top" '
-            'title="{}"'.format(tooltip_text)
+            f'title="{tooltip_text}"'
         )
     else:
         tooltip_html = ""
     return format_html(
-        '<span class="glyphicon glyphicon-{}"'
-        ' style="color:{};"{}></span>'.format(glyph_name.lower(), color, tooltip_html)
+        '<span class="glyphicon glyphicon-{}" style="color:{};"{}></span>',
+        glyph_name.lower(),
+        color,
+        tooltip_html,
     )
 
 
@@ -227,7 +229,6 @@ def yesnonone_str(value: Optional[bool]) -> str:
     """returns yes/no/none for boolean as string and with localization"""
     if value is True:
         return _("yes")
-    elif value is False:
+    if value is False:
         return _("no")
-    else:
-        return ""
+    return ""

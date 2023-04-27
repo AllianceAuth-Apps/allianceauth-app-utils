@@ -30,11 +30,11 @@ class BravadoResponseStub:
         self.status_code = status_code
         self.reason = reason
         self.text = text
-        self.headers = headers if headers else dict()
+        self.headers = headers if headers else {}
         self.raw_bytes = raw_bytes
 
     def __str__(self):
-        return "{0} {1}".format(self.status_code, self.reason)
+        return f"{self.status_code} {self.reason}"
 
 
 class BravadoOperationStub:
@@ -106,7 +106,12 @@ class EsiEndpoint:
         needs_token: Wether the method requires a token
         data: Data to be returned from this endpoint
         http_error_code: When provided will raise an HTTP exception with this code
-        side_effect: A side effect to be triggered. Can be an exception of a function. Exceptions will be raised. Functions will be called with the args of the endpoint and it's result returned instead of "data". Return the object `SIDE_EFFECT_DEFAULT` in the function to return the endpoints normal data.
+        side_effect: A side effect to be triggered. Can be an exception of a function.
+        Exceptions will be raised.
+        Functions will be called with the args of the endpoint
+        and it's result returned instead of "data".
+        Return the object `SIDE_EFFECT_DEFAULT` in the function
+        to return the endpoints normal data.
     """
 
     category: str
@@ -124,14 +129,16 @@ class EsiEndpoint:
     def requires_testdata(self) -> bool:
         """True if this endpoint requires testdata to be provide as well.
 
-        When an endpoint is only partially defined, one need to also provide testdata when creating a stub.
+        When an endpoint is only partially defined,
+        one need to also provide testdata when creating a stub.
         """
         return self.data is None and not self.http_error_code and not self.side_effect
 
 
 SIDE_EFFECT_DEFAULT = object()
 """Special object that can be returned from side_effect functions to indicate
-that the normal data should be returned (instead of the result of the side_effect function)
+that the normal data should be returned
+(instead of the result of the side_effect function)
 """
 
 
@@ -263,7 +270,7 @@ class EsiClientStub:
             try:
                 _ = self._testdata[endpoint.category][endpoint.method]
             except (KeyError, TypeError):
-                raise ValueError(f"No data provided for {endpoint}")
+                raise ValueError(f"No data provided for {endpoint}") from None
 
     def _add_endpoint(self, endpoint: EsiEndpoint):
         if not hasattr(self, endpoint.category):
