@@ -3,23 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to allianceauth-app-utils's documentation!
-==================================================
-
-*allianceauth-app-utils* is a distribution package with commonly used utility functions and classes for rapid development of Alliance Auth apps.
-
+.. include:: ../README.md
+   :parser: myst_parser.sphinx_
 
 .. toctree::
-   :maxdepth: 4
-   :caption: Contents:
+   :hidden:
+   :maxdepth: 3
 
    api
    settings
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

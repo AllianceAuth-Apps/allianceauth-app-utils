@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.18.1] - 2023-06-19
+
+### Changed
+
+- Can now define a custom HTTP error exception with EsiStub
+- Reworked docs page
+
 ## [1.18.0] - 2023-04-27
 
 ### Added
