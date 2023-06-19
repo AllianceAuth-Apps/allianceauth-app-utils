@@ -146,7 +146,7 @@ class _EsiMethod:
     """An ESI method that can be called from the ESI client."""
 
     def __init__(
-        self, endpoint: EsiEndpoint, testdata: Optional[dict], http_error: bool = False
+        self, endpoint: EsiEndpoint, testdata: Optional[dict], http_error: Any = False
     ) -> None:
         self._endpoint = endpoint
         if endpoint.data is not None:
@@ -167,8 +167,14 @@ class _EsiMethod:
 
     def call(self, **kwargs):
         """Method is called."""
-        if self._http_error:
-            raise build_http_error(500, "Test exception")
+
+        if isinstance(self._http_error, bool):
+            if self._http_error:
+                raise build_http_error(500, "Test exception")
+        else:
+            if isinstance(self._http_error, int):
+                raise build_http_error(self._http_error, "Test exception")
+
         if self._endpoint.http_error_code:
             raise build_http_error(
                 self._endpoint.http_error_code, "Endpoint raised exception"
@@ -250,13 +256,20 @@ class _EsiMethod:
 
 
 class EsiClientStub:
-    """Stub for replacing a django-esi client in tests."""
+    """Stub for replacing a django-esi client in tests.
+
+    Args:
+        testdata: data to be returned from Endpoint
+        endpoints: List of defined endpoints
+        http_error: Set `True` to generate a http 500 error exception
+            or set to a http error code to generate a specific http exception
+    """
 
     def __init__(
         self,
         testdata: Optional[dict],
         endpoints: List[EsiEndpoint],
-        http_error: bool = False,
+        http_error: Any = False,
     ) -> None:
         self._testdata = testdata
         self._http_error = http_error
