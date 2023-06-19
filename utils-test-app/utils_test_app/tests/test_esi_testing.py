@@ -1,7 +1,7 @@
 from datetime import datetime
 from unittest.mock import Mock
 
-from bravado.exception import HTTPNotFound
+from bravado.exception import HTTPBadGateway, HTTPInternalServerError, HTTPNotFound
 
 from app_utils.esi_testing import (
     SIDE_EFFECT_DEFAULT,
@@ -237,6 +237,20 @@ class TestEsiClientStub(NoSocketsTestCase):
         # then
         self.assertEqual(stub.Alpha.get_details(id=1).results(), "alpha")
         self.assertEqual(stub.Alpha.get_details(id=2).results(), "special")
+
+    def test_raises_http_error_500_on_any_endpoint(self):
+        # given
+        error_stub = EsiClientStub(self.testdata, self.endpoints, http_error=True)
+        # when
+        with self.assertRaises(HTTPInternalServerError):
+            error_stub.Alpha.get_cake(cake_id=1).results()
+
+    def test_raises_custom_http_error_on_any_endpoint(self):
+        # given
+        error_stub = EsiClientStub(self.testdata, self.endpoints, http_error=502)
+        # when
+        with self.assertRaises(HTTPBadGateway):
+            error_stub.Alpha.get_cake(cake_id=1).results()
 
 
 class TestEsiClientStub2(NoSocketsTestCase):
