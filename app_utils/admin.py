@@ -52,7 +52,7 @@ class FieldFilterCountsDb(admin.SimpleListFilter):
             .order_by(self.field_name)
         )
         if field.choices:
-            field_counts = self._map_choices_field(field, field_counts)
+            field_counts = self.__map_choices_field(field, field_counts)
             result = [
                 (
                     obj[self.field_name][0],
@@ -67,7 +67,7 @@ class FieldFilterCountsDb(admin.SimpleListFilter):
             ]
         return result
 
-    def _map_choices_field(self, field, field_counts):
+    def __map_choices_field(self, field, field_counts):
         """Map choices field values to corresponding labels and keep values."""
         mapper = {obj[0]: obj[1] for obj in field.choices}
         field_counts = [
