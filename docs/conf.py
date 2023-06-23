@@ -69,7 +69,7 @@ html_theme_options = {
     "description": "Commonly used utility functions and classes for rapid development of Alliance Auth apps.",
     "fixed_sidebar": True,
     "show_powered_by": False,
-    "sidebar_collapse": False,
+    "sidebar_collapse": True,
     "extra_nav_links": {
         "Report Issues": "https://gitlab.com/ErikKalkoken/allianceauth-app-utils/issues",
     },

@@ -1,4 +1,0 @@
-include LICENSE
-include README.md
-recursive-include utils_test_app/templates *
-include docs/requirements.txt
