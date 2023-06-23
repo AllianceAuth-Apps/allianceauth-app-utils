@@ -17,13 +17,5 @@ pylint:
 check_complexity:
 	flake8 $(package) --max-complexity=10
 
-nuke_testdb:
-	# This will delete the current test database
-	# very userful after large changes to the models
-	sudo mysql -u root -e "drop database test_aa_dev_4;"
-
 flake8:
 	flake8 $(package) --count
-
-create_testdata:
-	python ../myauth/manage.py test $(package).tests.testdata.create_eveuniverse --keepdb -v 2

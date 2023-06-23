@@ -15,3 +15,4 @@ celery_once
 passlib
 redis>=3.3.1,<4
 factory_boy
+mysqlclient<2.2
