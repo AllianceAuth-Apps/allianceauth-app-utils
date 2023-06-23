@@ -7,11 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-## [1.19.0] - TBD
+## [1.19.0] - 2023-06-23
 
 ### Changed
 
 - Migrated build process to PEP 621
+- Removed support for AA 2 / Django 3
+- Added support for Python 3.11
 
 ## [1.18.1] - 2023-06-19
 
