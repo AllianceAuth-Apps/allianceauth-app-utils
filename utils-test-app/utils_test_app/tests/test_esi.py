@@ -20,13 +20,30 @@ MODULE_PATH = "app_utils.esi"
 
 
 class TestEsiStatusExceptions(TestCase):
-    def test_offline(self):
-        try:
-            raise EsiErrorLimitExceeded(45)
-        except Exception as ex:
-            self.assertIsInstance(ex, EsiErrorLimitExceeded)
-            self.assertEqual(ex.retry_in, 45)
-            self.assertIn("ESI error limit has been exceeded", ex.message)
+    def test_can_create_exceptions(self):
+        # given
+        params = [EsiOffline, EsiDailyDowntime, EsiErrorLimitExceeded]
+        for exception_class in params:
+            with self.subTest(exception=exception_class):
+                # when
+                obj = exception_class()
+                # then
+                self.assertIsInstance(obj, exception_class)
+
+
+class TestEsiErrorLimitExceeded(TestCase):
+    def test_can_create_exception_without_params(self):
+        # when
+        obj = EsiErrorLimitExceeded()
+        # then
+        self.assertEqual(obj.retry_in, 60)
+
+    def test_can_create_exception_with_param(self):
+        # when
+        obj = EsiErrorLimitExceeded(42)
+        # then
+        self.assertEqual(obj.retry_in, 42)
+        self.assertIn("ESI error limit has been exceeded", obj.message)
 
 
 class TestEsiStatus(TestCase):

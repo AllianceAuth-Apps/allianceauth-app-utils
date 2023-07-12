@@ -27,7 +27,7 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
 ]
 dependencies = [
-    "allianceauth>=2.8.2",
+    "allianceauth>=3",
     "requests",
 ]
 
