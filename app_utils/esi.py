@@ -50,7 +50,7 @@ class EsiDailyDowntime(EsiOffline):
 class EsiErrorLimitExceeded(EsiStatusException):
     """ESI error limit exceeded error."""
 
-    def __init__(self, retry_in: float) -> None:
+    def __init__(self, retry_in: float = 60) -> None:
         """:meta private:"""
         super().__init__("The ESI error limit has been exceeded.")
         self._retry_in = float(retry_in)

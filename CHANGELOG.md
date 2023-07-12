@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.19.1] - 2023-07-12
+
+### Fixed
+
+- EsiErrorLimitExceed exception can not be pickled by celery
+
 ## [1.19.0] - 2023-06-23
 
 ### Changed
