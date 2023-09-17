@@ -1,5 +1,7 @@
 """Utilities related to Alliance Auth."""
 
+# pylint: disable=unused-import
+
 from functools import partial
 from typing import Optional
 
@@ -111,7 +113,7 @@ def is_night_mode(request) -> bool:
 def get_redis_client() -> Redis:
     """Return configured redis client used for Django caching in Alliance Auth."""
     try:
-        return django_redis.get_redis_connection("default")
+        return django_redis.get_redis_connection("default")  # type: ignore
     except AttributeError:
         default_cache = caches["default"]
         return default_cache.get_master_client()  # type: ignore

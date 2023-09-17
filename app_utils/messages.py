@@ -5,6 +5,7 @@ from django.http import HttpRequest
 from django.utils.safestring import mark_safe
 
 
+# pylint: disable=invalid-name
 class messages_plus:
     """Improvement of default Django messages with implicit HTML support."""
 

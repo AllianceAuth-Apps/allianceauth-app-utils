@@ -41,6 +41,8 @@ class BravadoOperationStub:
     """Stub to simulate the operation object return from bravado via django-esi."""
 
     class RequestConfig:
+        """A request config for a BravadoOperationStub."""
+
         def __init__(self, also_return_response):
             self.also_return_response = also_return_response
 
@@ -59,6 +61,7 @@ class BravadoOperationStub:
         self.request_config = BravadoOperationStub.RequestConfig(also_return_response)
 
     def result(self, **kwargs):
+        """Execute operation and return result."""
         if self.request_config.also_return_response:
             return [
                 self._data,
@@ -71,6 +74,7 @@ class BravadoOperationStub:
         return self._data
 
     def results(self, **kwargs):
+        """Execute operation and return results incl. paging."""
         return self.result(**kwargs)
 
 
@@ -171,6 +175,7 @@ class _EsiMethod:
         if isinstance(self._http_error, bool):
             if self._http_error:
                 raise build_http_error(500, "Test exception")
+
         else:
             if isinstance(self._http_error, int):
                 raise build_http_error(self._http_error, "Test exception")
@@ -179,14 +184,17 @@ class _EsiMethod:
             raise build_http_error(
                 self._endpoint.http_error_code, "Endpoint raised exception"
             )
+
         if self._endpoint.side_effect:
             if inspect.isclass(self._endpoint.side_effect) and issubclass(
                 self._endpoint.side_effect, Exception
             ):
                 raise self._endpoint.side_effect
+
             result = self._endpoint.side_effect(**kwargs)
             if result != SIDE_EFFECT_DEFAULT:
                 return BravadoOperationStub(result)
+
         pk_value = None
         if self._endpoint.primary_key:
             if isinstance(self._endpoint.primary_key, tuple):
@@ -201,17 +209,20 @@ class _EsiMethod:
                     f"{self._endpoint.category}.{self._endpoint.method}: Missing primary key: "
                     f"{self._endpoint.primary_key}"
                 )
+
         if self._endpoint.needs_token:
             if "token" not in kwargs:
                 raise ValueError(
                     f"{self._endpoint.category}.{self._endpoint.method} "
                     f"with pk = {self._endpoint.primary_key}: Missing token"
                 )
-            elif not isinstance(kwargs.get("token"), str):
+
+            if not isinstance(kwargs.get("token"), str):
                 raise TypeError(
                     f"{self._endpoint.category}.{self._endpoint.method} "
                     f"with pk = {self._endpoint.primary_key}: Token is not a string"
                 )
+
         try:
             if self._endpoint.primary_key:
                 if isinstance(self._endpoint.primary_key, tuple):
@@ -223,26 +234,28 @@ class _EsiMethod:
                 else:
                     pk_value = str(kwargs[self._endpoint.primary_key])
                     result = self._convert_values(self._testdata[pk_value])
+
             else:
                 result = self._convert_values(self._testdata)
+
         except (KeyError, TypeError):
             text = (
                 f"{self._endpoint.category}.{self._endpoint.method}: "
                 f"No test data for {self._endpoint.primary_key} = {pk_value}"
             )
             raise build_http_error(404, text) from None
+
         return BravadoOperationStub(result)
 
     @staticmethod
     def _convert_values(data) -> Any:
         def convert_dict(item):
             if isinstance(item, dict):
-                for k, v in item.items():
-                    if isinstance(v, str):
+                for key, value in item.items():
+                    if isinstance(value, str):
                         try:
-                            dt = parse_datetime(v)
-                            if dt:
-                                item[k] = dt.replace(tzinfo=utc)
+                            if my_datetime := parse_datetime(value):
+                                item[key] = my_datetime.replace(tzinfo=utc)
                         except ValueError:
                             pass
 
@@ -287,7 +300,7 @@ class EsiClientStub:
 
     def _add_endpoint(self, endpoint: EsiEndpoint):
         if not hasattr(self, endpoint.category):
-            setattr(self, endpoint.category, type(endpoint.category, (object,), dict()))
+            setattr(self, endpoint.category, type(endpoint.category, (object,), {}))
         my_category = getattr(self, endpoint.category)
         if not hasattr(my_category, endpoint.method):
             setattr(
@@ -316,14 +329,14 @@ class EsiClientStub:
         """
         _endpoints = copy(self._endpoints_def)
         _endpoints_mapped = defaultdict(dict)
-        for ep in _endpoints:
-            _endpoints_mapped[ep.category][ep.method] = ep
+        for endpoint in _endpoints:
+            _endpoints_mapped[endpoint.category][endpoint.method] = endpoint
         for new_ep in new_endpoints:
             try:
-                ep = _endpoints_mapped[new_ep.category][new_ep.method]
+                endpoint = _endpoints_mapped[new_ep.category][new_ep.method]
             except KeyError:
                 raise ValueError(f"No matching endpoint for {new_ep}") from None
-            _endpoints.remove(ep)
+            _endpoints.remove(endpoint)
             _endpoints.append(new_ep)
         return self.create_from_endpoints(_endpoints)
 

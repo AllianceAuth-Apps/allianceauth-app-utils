@@ -148,22 +148,22 @@ def fetch_esi_status(ignore_daily_downtime: bool = False) -> EsiStatus:
     if not ignore_daily_downtime and is_daily_downtime:
         return EsiStatus(is_online=False, is_daily_downtime=True)
     try:
-        r = _request_esi_status()
+        response = _request_esi_status()
     except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
         logger.warning("Network error when trying to call ESI", exc_info=True)
         return EsiStatus(is_online=False, is_daily_downtime=is_daily_downtime)
-    if not r.ok:
+    if not response.ok:
         is_online = False
     else:
         try:
-            is_online = not r.json().get("vip")
+            is_online = not response.json().get("vip")
         except ValueError:
             is_online = False
     try:
-        remain = int(r.headers.get("X-Esi-Error-Limit-Remain"))  # type: ignore
-        reset = int(r.headers.get("X-Esi-Error-Limit-Reset"))  # type: ignore
+        remain = int(response.headers.get("X-Esi-Error-Limit-Remain"))  # type: ignore
+        reset = int(response.headers.get("X-Esi-Error-Limit-Reset"))  # type: ignore
     except TypeError:
-        logger.warning("Failed to parse HTTP headers: %s", r.headers)
+        logger.warning("Failed to parse HTTP headers: %s", response.headers)
         return EsiStatus(is_online=is_online, is_daily_downtime=is_daily_downtime)
     logger.debug(
         "ESI status: is_online: %s, error_limit_remain = %s, error_limit_reset = %s",
@@ -193,36 +193,43 @@ def _calc_downtime(hours_float: float) -> dt.datetime:
 
 def _convert_float_hours(hours_float: float) -> tuple:
     """Convert float hours into int hours and int minutes for datetime."""
-    h = int(hours_float)
-    m = int((hours_float - h) * 60)
-    return h, m
+    hours = int(hours_float)
+    minutes = int((hours_float - hours) * 60)
+    return hours, minutes
 
 
 def _request_esi_status() -> requests.Response:
     """Fetch current status from ESI. Retry on common HTTP errors."""
-    max_runs = 3
-    for run in range(1, max_runs + 1):
-        r = requests.get(
+    max_retries = 3
+    retry_count = 0
+    while True:
+        response = requests.get(
             "https://esi.evetech.net/latest/status/",
             timeout=(5, 30),
             headers={"User-Agent": f"{__package__};{__version__}"},
         )
-        if r.status_code not in {
+        if response.status_code not in {
             502,  # HTTPBadGateway
             503,  # HTTPServiceUnavailable
             504,  # HTTPGatewayTimeout
         }:
             break
+
+        retry_count += 1
+        if retry_count > max_retries:
+            break
+
         logger.warning(
             "HTTP status code %s - Try %s/%s",
-            r.status_code,
-            run,
-            max_runs,
+            response.status_code,
+            retry_count,
+            max_retries,
         )
-        if run < max_runs:
-            wait_secs = 0.1 * (random.uniform(2, 4) ** run)
-            sleep(wait_secs)
-    return r
+
+        wait_secs = 0.1 * (random.uniform(2, 4) ** (retry_count - 1))
+        sleep(wait_secs)
+
+    return response
 
 
 def retry_task_if_esi_is_down(self):

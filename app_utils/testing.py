@@ -1,5 +1,7 @@
 """Utilities for making it easier to write tests."""
 
+# pylint: disable=unused-import
+
 import datetime as dt
 import json
 import logging
@@ -66,6 +68,7 @@ class NoSocketsTestCase(TestCase):
 
     @staticmethod
     def guard(*args, **kwargs):
+        """:meta_private:"""
         raise SocketAccessError("Attempted to access network")
 
 
@@ -412,7 +415,7 @@ def next_number(key=None) -> int:
     try:
         return next(next_number._counter[key])
     except AttributeError:
-        next_number._counter = dict()
+        next_number._counter = {}
     except KeyError:
         pass
     next_number._counter[key] = count(start=1)

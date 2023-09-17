@@ -26,9 +26,7 @@ class HttpResponseNoContent(HttpResponse):
         super().__init__(*args, **kwargs)
         # although we don't define a content-type, base class sets a
         # default one -- remove it, we're not returning content
-        if hasattr(self, "_headers") and "content-type" in self._headers:  # Django<3.2
-            del self._headers["content-type"]
-        elif hasattr(self, "headers") and "content-type" in self.headers:  # Django>=3.2
+        if hasattr(self, "headers") and "content-type" in self.headers:
             del self.headers["content-type"]
         else:
             raise ValueError("No header found")  # this should never be called

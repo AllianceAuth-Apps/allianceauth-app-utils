@@ -1,4 +1,5 @@
 """Extending the Django utilities."""
+# pylint: disable = unused-import
 
 from typing import Optional
 
@@ -13,7 +14,7 @@ from .urls import static_file_absolute_url
 
 def app_labels() -> set:
     """returns set of all current app labels"""
-    return {x for x in apps.app_configs.keys()}
+    return set(apps.app_configs.keys())
 
 
 def users_with_permission(
@@ -50,7 +51,9 @@ def admin_boolean_icon_html(value) -> Optional[str]:
     if value is True:
         icon_url = static_file_absolute_url("admin/img/icon-yes.svg")
         return make_html(icon_url, "True")
-    elif value is False:
+
+    if value is False:
         icon_url = static_file_absolute_url("admin/img/icon-no.svg")
         return make_html(icon_url, "False")
+
     return None
