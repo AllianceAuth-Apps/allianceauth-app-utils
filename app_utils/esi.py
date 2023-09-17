@@ -200,8 +200,9 @@ def _convert_float_hours(hours_float: float) -> tuple:
 
 def _request_esi_status() -> requests.Response:
     """Fetch current status from ESI. Retry on common HTTP errors."""
-    max_runs = 3
-    for run in range(1, max_runs + 1):
+    max_retries = 3
+    retry_count = 0
+    while True:
         response = requests.get(
             "https://esi.evetech.net/latest/status/",
             timeout=(5, 30),
@@ -213,15 +214,21 @@ def _request_esi_status() -> requests.Response:
             504,  # HTTPGatewayTimeout
         }:
             break
+
+        retry_count += 1
+        if retry_count > max_retries:
+            break
+
         logger.warning(
             "HTTP status code %s - Try %s/%s",
             response.status_code,
-            run,
-            max_runs,
+            retry_count,
+            max_retries,
         )
-        if run < max_runs:
-            wait_secs = 0.1 * (random.uniform(2, 4) ** run)
-            sleep(wait_secs)
+
+        wait_secs = 0.1 * (random.uniform(2, 4) ** (retry_count - 1))
+        sleep(wait_secs)
+
     return response
 
 
