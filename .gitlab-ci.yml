@@ -3,7 +3,7 @@ stages:
 - test
 - deploy
 
-pre-commit-check:
+pre-commit:
   stage: checks
   image: python:3.10-bullseye
   variables:
@@ -15,45 +15,45 @@ pre-commit-check:
     - pip install pre-commit
     - pre-commit run --all-files
 
-check-docs:
-  stage: checks
-  image: python:3.8-bullseye
-  before_script:
-    - pip install tox
-  script:
-    - cd utils-test-app
-    - tox -e docs
-
-.test:
-  stage: test
+.tox_setup:
   before_script:
     - apt-get update
     - apt-get install redis-server -y
     - redis-server --daemonize yes
     - python -V
     - pip install tox
+    - cd utils-test-app
+
+check-docs:
+  stage: checks
+  extends: .tox_setup
+  image: python:3.8-bullseye
+  script:
+    - tox -e docs
 
 test-py38-dj40:
-  extends: .test
+  extends: .tox_setup
   image: python:3.8-bullseye
   script:
     - tox -e py38-django40
+    - bash <(curl -s https://codecov.io/bash)
 
 test-py39-dj40:
-  extends: .test
+  extends: .tox_setup
   image: python:3.9-bullseye
   script:
     - tox -e py39-django40
+    - bash <(curl -s https://codecov.io/bash)
 
 test-py310-dj40:
-  extends: .test
+  extends: .tox_setup
   image: python:3.10-bullseye
   script:
     - tox -e py310-django40
     - bash <(curl -s https://codecov.io/bash)
 
 test-py311-dj40:
-  extends: .test
+  extends: .tox_setup
   image: python:3.11-bullseye
   script:
   - tox -e py311-django40
