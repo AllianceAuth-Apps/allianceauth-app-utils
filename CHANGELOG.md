@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.20.1] - 2023-09-17
+
+### Changed
+
+- ObjectCacheMixin.clear_cache() now clears all cached objects including variants with select_related
+
+### Fixed
+
+- Incorrect cache key generated in ObjectCacheMixin
+
 ## [1.20.0] - 2023-09-17
 
 ### Added

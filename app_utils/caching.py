@@ -49,26 +49,31 @@ class ObjectCacheMixin:
             self._create_object_cache_key(pk, select_related), func, timeout
         )
 
-    def clear_cache(self, pk, select_related: Optional[str] = None):
+    def clear_cache(self, pk: int):
         """Clear cache for a potentially cached object.
+
+        This will also clear cached variants with select_related (if any).
 
         Args:
             pk: Primary key for object to fetch
-            select_related: select_related query to be applied (if any)
         """
-        cache.delete(self._create_object_cache_key(pk, select_related))
+        key_base = self._create_object_base_cache_key(pk)
+        cache.delete_pattern(f"{key_base}*")
+
+    def _create_object_base_cache_key(self, pk: int) -> str:
+        model_meta = self.model._meta
+        return f"{model_meta.app_label}-{model_meta.model_name}-{pk}"
 
     def _create_object_cache_key(
         self, pk: int, select_related: Optional[str] = None
     ) -> str:
+        key = self._create_object_base_cache_key(pk)
         suffix = (
             hashlib.md5(select_related.encode("utf-8")).hexdigest()
             if select_related
             else ""
         )
-        model_meta = self.model._meta
-        key = f"{model_meta.app_label}-{model_meta.model_name}-{pk}"
-        return f"{key}-{suffix}" if suffix else ""
+        return f"{key}-{suffix}" if suffix else key
 
     def _fetch_object_for_cache(self, pk, select_related: Optional[str] = None):
         qs = self.select_related(select_related) if select_related else self
