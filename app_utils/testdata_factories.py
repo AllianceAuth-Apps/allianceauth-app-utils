@@ -188,7 +188,7 @@ class UserMainFactory(UserFactory):
     """
 
     @factory.post_generation
-    def main_character(obj, create, extracted, **kwargs):
+    def main_character(obj, create, _extracted, **kwargs):
         if not create:
             return
         if "character" in kwargs:

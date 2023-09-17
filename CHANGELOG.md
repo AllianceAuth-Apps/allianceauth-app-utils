@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - caching: Ability to clear a cached object explicitly
 
+### Changed
+
+- Refactoring based on issues identified by pylint
+
 ## [1.19.1] - 2023-07-12
 
 ### Fixed

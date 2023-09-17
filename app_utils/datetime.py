@@ -61,12 +61,12 @@ def timeuntil_str(duration: dt.timedelta, show_seconds=True) -> str:
             # Translators: Abbreviation for seconds
             (_("s"), 1, True, show_seconds),
         ]
-        strings = list()
+        strings = []
         for period_name, period_seconds, period_static, show in periods:
             if seconds >= period_seconds or period_static:
                 period_value, seconds = divmod(seconds, period_seconds)
                 if show:
-                    strings.append("{}{}".format(period_value, period_name))
+                    strings.append(f"{period_value}{period_name}")
 
         result = " ".join(strings)
     else:

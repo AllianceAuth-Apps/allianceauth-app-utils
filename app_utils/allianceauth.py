@@ -1,5 +1,7 @@
 """Utilities related to Alliance Auth."""
 
+# pylint: disable=unused-import
+
 from functools import partial
 from typing import Optional
 

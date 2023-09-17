@@ -1,0 +1,12 @@
+[MASTER]
+ignore-patterns=__init__.py,testdata_factories.py
+ignore-paths=^.*/tests/.*$
+
+[BASIC]
+good-names=i,j,k,ex,id,pk
+
+[FORMAT]
+max-line-length=120
+
+[MESSAGES CONTROL]
+disable=too-many-arguments,too-few-public-methods,imported-auth-user,import-outside-toplevel,fixme

@@ -20,8 +20,8 @@ _results: List[_TestDurationResult] = []
 
 class _TimedTextTestResult(TextTestResult):
     def __init__(self, *args, **kwargs):
-        super(_TimedTextTestResult, self).__init__(*args, **kwargs)
-        self.clocks = dict()
+        super().__init__(*args, **kwargs)
+        self.clocks = {}
 
     def startTest(self, test):
         self.clocks[test] = time()
@@ -55,9 +55,9 @@ class _TimedTextTestRunner(TextTestRunner):
         self.stream.writeln()
         self.stream.writeln(f"Top {SLOWEST_TESTS_TOP_COUNT} slowest tests:")
         _results.sort(reverse=True, key=lambda o: o.duration)
-        for o in _results[:SLOWEST_TESTS_TOP_COUNT]:
-            self.stream.writeln(f"{o.duration:>8.2f}s: {o.name}")
-        values = [o.duration for o in _results]
+        for obj in _results[:SLOWEST_TESTS_TOP_COUNT]:
+            self.stream.writeln(f"{obj.duration:>8.2f}s: {obj.name}")
+        values = [obj.duration for obj in _results]
         average_duration = statistics.mean(values)
         tests_count = len(values)
         self.stream.writeln(
