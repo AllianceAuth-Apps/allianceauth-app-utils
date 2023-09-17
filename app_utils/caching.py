@@ -9,7 +9,7 @@ from django.db import models
 
 
 class ObjectCacheMixin:
-    """Adds a simple object cache to a Django manager"""
+    """A mixin which adds a simple object cache to a Django manager."""
 
     def get_cached(
         self,
@@ -48,6 +48,15 @@ class ObjectCacheMixin:
         return cache.get_or_set(
             self._create_object_cache_key(pk, select_related), func, timeout
         )
+
+    def clear_cache(self, pk, select_related: Optional[str] = None):
+        """Clear cache for a potentially cached object.
+
+        Args:
+            pk: Primary key for object to fetch
+            select_related: select_related query to be applied (if any)
+        """
+        cache.delete(self._create_object_cache_key(pk, select_related))
 
     def _create_object_cache_key(
         self, pk: int, select_related: Optional[str] = None

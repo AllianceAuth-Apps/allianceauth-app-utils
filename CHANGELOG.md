@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.20.0] - 2023-09-17
+
+### Added
+
+- caching: Ability to clear a cached object explicitly
+
 ## [1.19.1] - 2023-07-12
 
 ### Fixed

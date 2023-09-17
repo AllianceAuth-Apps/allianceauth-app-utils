@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 from django.core.cache import cache
 from django.test import TestCase
 
@@ -41,34 +39,78 @@ class FakeModel:
     objects = FakeManager()
 
 
-@patch(
-    CURRENT_PATH + ".FakeManager._fetch_object_for_cache",
-    wraps=FakeModel.objects._fetch_object_for_cache,
-)
 class TestObjectCacheMixin(TestCase):
     def setUp(self) -> None:
-        self.obj = FakeModel.objects.create(name="My Fake Model")
         cache.clear()
 
-    def test_get_cached_1(self, mock_fetch_object_for_cache):
-        """when cache is empty, load from DB"""
-        obj = FakeModel.objects.get_cached(pk=self.obj.pk)
+    def test_should_fetch_from_db_when_cache_is_empty(self):
+        # given
+        obj = FakeModel.objects.create(name="My object")
 
-        self.assertEqual(obj.name, "My Fake Model")
-        self.assertEqual(mock_fetch_object_for_cache.call_count, 1)
+        # when
+        new_obj = FakeModel.objects.get_cached(pk=obj.pk)
 
-    def test_get_cached_2(self, mock_fetch_object_for_cache):
-        """when cache is not empty, load from cache"""
-        obj = FakeModel.objects.get_cached(pk=self.obj.pk)
+        # then
+        self.assertEqual(new_obj.name, "My object")
 
-        obj = FakeModel.objects.get_cached(pk=self.obj.pk)
+    def test_should_fetch_from_cache(self):
+        # given
+        obj = FakeModel.objects.create(name="My object")
+        FakeModel.objects.get_cached(pk=obj.pk)
+        obj.name = "Changed object"
 
-        self.assertEqual(obj.name, "My Fake Model")
-        self.assertEqual(mock_fetch_object_for_cache.call_count, 1)
+        # when
+        new_obj = FakeModel.objects.get_cached(pk=obj.pk)
 
-    def test_get_cached_3(self, mock_fetch_object_for_cache):
-        """when cache is empty, load from DB"""
-        obj = FakeModel.objects.get_cached(pk=self.obj.pk, select_related="dummy")
+        # then
+        self.assertEqual(new_obj.name, "My object")
 
-        self.assertEqual(obj.name, "My Fake Model")
-        self.assertEqual(mock_fetch_object_for_cache.call_count, 1)
+    def test_should_fetch_from_db_when_cache_cleared(self):
+        # given
+        obj = FakeModel.objects.create(name="My object")
+        FakeModel.objects.get_cached(pk=obj.pk)
+        obj.name = "Changed object"
+
+        # when
+        FakeModel.objects.clear_cache(pk=obj.pk)
+        new_obj = FakeModel.objects.get_cached(pk=obj.pk)
+
+        # then
+        self.assertEqual(new_obj.name, "Changed object")
+
+    def test_should_fetch_from_db_when_query_is_different(self):
+        # given
+        obj = FakeModel.objects.create(name="My object")
+        FakeModel.objects.get_cached(pk=obj.pk, select_related="dummy")
+        obj.name = "Changed object"
+
+        # when
+        new_obj = FakeModel.objects.get_cached(pk=obj.pk)
+
+        # then
+        self.assertEqual(new_obj.name, "Changed object")
+
+    def test_should_fetch_from_cache_with_select_related(self):
+        # given
+        obj = FakeModel.objects.create(name="My object")
+        FakeModel.objects.get_cached(pk=obj.pk, select_related="dummy")
+        obj.name = "Changed object"
+
+        # when
+        new_obj = FakeModel.objects.get_cached(pk=obj.pk, select_related="dummy")
+
+        # then
+        self.assertEqual(new_obj.name, "My object")
+
+    def test_should_fetch_from_db_when_cache_cleared_with_select_related(self):
+        # given
+        obj = FakeModel.objects.create(name="My object")
+        FakeModel.objects.get_cached(pk=obj.pk, select_related="dummy")
+        obj.name = "Changed object"
+
+        # when
+        FakeModel.objects.clear_cache(pk=obj.pk, select_related="dummy")
+        new_obj = FakeModel.objects.get_cached(pk=obj.pk, select_related="dummy")
+
+        # then
+        self.assertEqual(new_obj.name, "Changed object")
