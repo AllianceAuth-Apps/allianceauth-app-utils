@@ -33,7 +33,8 @@ class JSONDateTimeDecoder(json.JSONDecoder):
 
         type_str = dct.pop("__type__")
         zone, _ = dct.pop("tz")
-        dct["tzinfo"] = timezone(zone)
+        if zone:
+            dct["tzinfo"] = timezone(zone)
         try:
             date_obj = dt.datetime(**dct)
             return date_obj
@@ -45,6 +46,8 @@ class JSONDateTimeDecoder(json.JSONDecoder):
 class JSONDateTimeEncoder(json.JSONEncoder):
     """Encoder for the standard json library to encode datetime into JSON.
     To be used together with ``JSONDateTimeDecoder``.
+
+    Works with naive and aware datetimes, but only with UTC timezone.
 
     Example:
 
@@ -59,6 +62,12 @@ class JSONDateTimeEncoder(json.JSONEncoder):
         :meta private:
         """
         if isinstance(o, dt.datetime):
+            tz_name = o.tzinfo.tzname(o) if o.tzinfo else None
+            if tz_offset := o.utcoffset():
+                tz_total_seconds = tz_offset.total_seconds()
+            else:
+                tz_total_seconds = None
+            timezone_info = tz_name, tz_total_seconds
             return {
                 "__type__": "datetime",
                 "year": o.year,
@@ -68,7 +77,7 @@ class JSONDateTimeEncoder(json.JSONEncoder):
                 "minute": o.minute,
                 "second": o.second,
                 "microsecond": o.microsecond,
-                "tz": (o.tzinfo.tzname(o), o.utcoffset().total_seconds()),
+                "tz": timezone_info,
             }
 
         return json.JSONEncoder.default(self, o)
