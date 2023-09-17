@@ -109,7 +109,7 @@ class TestObjectCacheMixin(TestCase):
         obj.name = "Changed object"
 
         # when
-        FakeModel.objects.clear_cache(pk=obj.pk, select_related="dummy")
+        FakeModel.objects.clear_cache(pk=obj.pk)
         new_obj = FakeModel.objects.get_cached(pk=obj.pk, select_related="dummy")
 
         # then
