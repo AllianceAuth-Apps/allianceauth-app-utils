@@ -2,7 +2,7 @@
 
 from enum import Enum
 from http import HTTPStatus
-from typing import Optional
+from typing import List, Optional
 
 from django.http import HttpResponse, JsonResponse
 from django.utils.functional import lazy
@@ -45,7 +45,7 @@ class JSONResponseMixin:
 
 
 class BootstrapStyle(str, Enum):
-    """Bootstrap context style names, e.g. for labels"""
+    """A Bootstrap context style names, e.g. for labels"""
 
     DANGER = "danger"  #:
     DEFAULT = "default"  #:
@@ -60,21 +60,21 @@ class BootstrapStyle(str, Enum):
 
 # old: add_bs_label_html
 def bootstrap_label_html(text: str, label: str = "default") -> str:
-    """create Bootstrap label and return HTML"""
+    """Return HTML for a Bootstrap label."""
     return format_html('<span class="label label-{}">{}</span>', label, text)
 
 
 # old: create_bs_glyph_html
 def bootstrap_glyph_html(glyph_name: str) -> str:
-    """returns a Bootstrap glyph HTML"""
+    """Return HTML for a Bootstrap 3 glyph."""
     return format_html(
         '<span class="glyphicon glyphicon-{}"></span>', glyph_name.lower()
     )
 
 
 # old: create_bs_glyph_2_html
-def bootstrap_glyph_2_html(glyph_name, tooltip_text=None, color="initial"):
-    """returns a Bootstrap glyph HTML and can also have a tool tip and a color"""
+def bootstrap_glyph_2_html(glyph_name, tooltip_text=None, color="initial") -> str:
+    """Return HTML for a Bootstrap 3 glyph HTML. Can also have a tool tip and color."""
     if tooltip_text:
         tooltip_html = mark_safe(
             'aria-hidden="true" data-toggle="tooltip" data-placement="top" '
@@ -98,7 +98,10 @@ def bootstrap_icon_plus_name_html(
     url: Optional[str] = None,
     text: Optional[str] = None,
 ) -> str:
-    """returns HTML to display an icon next to a name. Can also be a link."""
+    """Returns HTML to display an icon next to a name. Can also be a link.
+
+    DEPRECATED. To be replaced by bootstrap_icon_plus_text_html.
+    """
     name_html = link_html(url, name, new_window=False) if url else name
     if text:
         name_html = format_html("{}&nbsp;{}", name_html, text)
@@ -112,11 +115,49 @@ def bootstrap_icon_plus_name_html(
     )
 
 
+def bootstrap_icon_plus_text_html(
+    icon_url: str,
+    text: str,
+    size: int = DEFAULT_ICON_SIZE,
+    avatar: bool = False,
+    url: Optional[str] = None,
+    suffix: Optional[str] = None,
+) -> str:
+    """Return HTML for a widget consisting of an icon with a text or link:
+
+    `<Icon> <Text/Link> [<Suffix>]`
+
+    Adds the class ``icon-plus-text`` to all images to enable styling.
+
+    Args:
+        - icon_url: URL to an icon file, supported by <img>, e.g. GIF, PNG
+        - text: Text to be shown next to icon. Often a name.
+        - size: Size of the icon in pixel
+        - avatar: When enabled the icon will get Bootstrap 3 classes for avatars
+        - url: A provided URL will transform the text into a link
+        - suffix: Additional text to be shown after the main text.
+            Will not be part of a link.
+    """
+    my_css_class = "icon-plus-text"
+    if url:
+        text_html = link_html(url, text, new_window=False, classes=[my_css_class])
+    else:
+        text_html = format_html('<span class="{}">{}</span>', my_css_class, text)
+
+    if suffix:
+        text_html = format_html("{} {}", text_html, suffix)
+
+    my_image_html = image_html(
+        icon_url, classes=["img-circle"] if avatar else [], size=size
+    )
+    return format_html("{} {}", my_image_html, text_html)
+
+
 # old: create_bs_button_html
 def bootstrap_link_button_html(
     url: str, glyph_name: str, button_type: str, disabled: bool = False
 ) -> str:
-    """returns bootstrap link button and return HTML"""
+    """Return HTML for a button with Bootstrap 3 glyphs."""
     return format_html(
         '<a href="{}" class="btn btn-{}"{}>{}</a>',
         url,
@@ -134,7 +175,7 @@ def fontawesome_link_button_html(
     tooltip: Optional[str] = None,
     disabled: bool = False,
 ) -> str:
-    """create fontawesome button and return HTML"""
+    """Return HTML for a button with fontawesome symbols."""
     return format_html(
         '<a href="{}" class="btn btn-{}"{}>{}{}</a>',
         url,
@@ -152,7 +193,7 @@ def fontawesome_modal_button_html(
     tooltip: str = "",
     style=BootstrapStyle.DEFAULT,
 ) -> str:
-    """create fontawesome modal button and return HTML
+    """Return HTML for a modal button with fontawesome symbols.
 
     Args:
         modal_id: DOM ID of modal to invoke
@@ -179,8 +220,8 @@ def fontawesome_modal_button_html(
 
 
 def humanize_value(value: float, precision: int = 2) -> str:
-    """returns given value in human readable and abbreviated form
-    e.g. ``1234678`` -> ``1.23m``
+    """Return a value in a human readable and abbreviated form
+    e.g. ``1234678`` -> ``1.23m``.
     """
     value = float(value)
     for exponent, identifier in [(12, "t"), (9, "b"), (6, "m"), (3, "k")]:
@@ -191,40 +232,51 @@ def humanize_value(value: float, precision: int = 2) -> str:
 
 
 def image_html(
-    src: str, classes: Optional[list] = None, size: Optional[int] = None
+    src: str, classes: Optional[List[str]] = None, size: Optional[int] = None
 ) -> str:
-    """returns the HTML for an image with optional classes and size"""
-    classes_str = format_html('class="{}"', (" ".join(classes)) if classes else "")
+    """Return HTML for an image with optional classes and size."""
+    classes_html = _classes_html(classes) if classes else ""
     size_html = (
-        format_html('width="{}" height="{}"', int(size), int(size)) if size else ""
+        format_html(' width="{}" height="{}"', int(size), int(size)) if size else ""
     )
-    return format_html('<img {} {} src="{}">', classes_str, size_html, src)
+    return format_html('<img{}{} src="{}">', classes_html, size_html, src)
 
 
 # old: create_link_html
-def link_html(url: str, label: str, new_window: bool = True) -> str:
-    """create html link and return HTML"""
-    return format_html(
-        '<a href="{}"{}>{}</a>',
-        url,
-        mark_safe(' target="_blank"') if new_window else "",
-        label,
-    )
+def link_html(
+    url: str, label: str, new_window: bool = True, classes: Optional[List[str]] = None
+) -> str:
+    """Return HTML for a link.
+
+    Args:
+        - url: URL
+        - label: Text describing the link
+        - new_window: When enabled the link will open a new window
+        - classes: Classes to be added to the a tag
+    """
+    classes_html = _classes_html(classes) if classes else ""
+    target_html = mark_safe(' target="_blank"') if new_window else ""
+    return format_html('<a{} href="{}"{}>{}</a>', classes_html, url, target_html, label)
+
+
+def _classes_html(classes: List[str]) -> str:
+    classes_html = format_html(' class="{}"', (" ".join(classes)))
+    return classes_html
 
 
 # old: add_no_wrap_html
 def no_wrap_html(text: str) -> str:
-    """add no-wrap HTML to text"""
-    return format_html('<span class="text-nowrap;">{}</span>', mark_safe(text))
+    """Add no-wrap HTML to text with Bootstrap 3."""
+    return format_html('<span class="text-nowrap">{}</span>', text)
 
 
 def yesno_str(value: bool) -> str:
-    """returns yes/no for boolean as string and with localization"""
+    """Return yes/no for boolean as string and with localization."""
     return _("yes") if value is True else _("no")
 
 
 def yesnonone_str(value: Optional[bool]) -> str:
-    """returns yes/no/none for boolean as string and with localization"""
+    """Return yes/no/none for boolean as string and with localization."""
     if value is True:
         return _("yes")
     if value is False:
