@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.21.0] - 2023-09-17
+
+### Added
+
+- `views.bootstrap_icon_plus_text_html()`: Improved variant of bootstrap_icon_plus_name_html, which no longer uses nbsp for spacing. Instead a class is provided to enable spacing via CSS styles.
+
+### Changes
+
+- Deprecated: `views.bootstrap_icon_plus_name_html()`
+
+### Fixed
+
+- nowrap_html does not work
+
 ## [1.20.1] - 2023-09-17
 
 ### Changed

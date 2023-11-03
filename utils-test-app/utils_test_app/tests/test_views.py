@@ -1,13 +1,15 @@
 from django.test import TestCase
 from django.utils import translation
-from django.utils.html import mark_safe
+from django.utils.safestring import mark_safe
 
 from app_utils.views import (
     HttpResponseNoContent,
     bootstrap_glyph_html,
+    bootstrap_icon_plus_text_html,
     bootstrap_label_html,
     bootstrap_link_button_html,
     humanize_value,
+    image_html,
     link_html,
     no_wrap_html,
     yesno_str,
@@ -15,6 +17,8 @@ from app_utils.views import (
 
 MODULE_PATH = "app_utils"
 CURRENT_PATH = "utils_test_app.tests.test_all"
+
+ICON_URL = "https://images.evetech.net/types/670/icon?size=64"
 
 
 class TestHttpResponseNoContent(TestCase):
@@ -33,7 +37,7 @@ class TestHttpResponseNoContent(TestCase):
 
 class TestHtmlHelper(TestCase):
     def test_add_no_wrap_html(self):
-        expected = '<span class="text-nowrap;">Dummy</span>'
+        expected = '<span class="text-nowrap">Dummy</span>'
         self.assertEqual(no_wrap_html("Dummy"), expected)
 
     def test_yesno_str(self):
@@ -47,29 +51,6 @@ class TestHtmlHelper(TestCase):
     def test_add_bs_label_html(self):
         expected = '<span class="label label-danger">Dummy</span>'
         self.assertEqual(bootstrap_label_html("Dummy", "danger"), expected)
-
-    def test_create_link_html_default(self):
-        expected = (
-            '<a href="https://www.example.com" target="_blank">' "Example Link</a>"
-        )
-        self.assertEqual(link_html("https://www.example.com", "Example Link"), expected)
-
-    def test_create_link_html(self):
-        expected = '<a href="https://www.example.com">Example Link</a>'
-        self.assertEqual(
-            link_html("https://www.example.com", "Example Link", False), expected
-        )
-        expected = (
-            '<a href="https://www.example.com">' "<strong>Example Link</strong></a>"
-        )
-        self.assertEqual(
-            link_html(
-                "https://www.example.com",
-                mark_safe("<strong>Example Link</strong>"),
-                False,
-            ),
-            expected,
-        )
 
     def test_create_bs_button_html_default(self):
         expected = (
@@ -92,6 +73,111 @@ class TestHtmlHelper(TestCase):
                 "https://www.example.com", "example", "info", True
             ),
             expected,
+        )
+
+
+class TestLinkHtml(TestCase):
+    def test_create_link_html_default(self):
+        # when
+        result = link_html("https://www.example.com", "Example Link")
+        # then
+        expected = '<a href="https://www.example.com" target="_blank">Example Link</a>'
+        self.assertEqual(result, expected)
+
+    def test_create_link_html(self):
+        expected = '<a href="https://www.example.com">Example Link</a>'
+        self.assertEqual(
+            link_html("https://www.example.com", "Example Link", False), expected
+        )
+        expected = (
+            '<a href="https://www.example.com">' "<strong>Example Link</strong></a>"
+        )
+        self.assertEqual(
+            link_html(
+                "https://www.example.com",
+                mark_safe("<strong>Example Link</strong>"),
+                False,
+            ),
+            expected,
+        )
+
+    def test_should_create_link_with_classes(self):
+        # when
+        result = link_html(
+            "https://www.example.com", "Example Link", classes=["green", "blue"]
+        )
+        # then
+        expected = (
+            '<a class="green blue" href="https://www.example.com" '
+            'target="_blank">Example Link</a>'
+        )
+        self.assertEqual(result, expected)
+
+
+class TestImageUrl(TestCase):
+    def test_should_create_simple_image_url(self):
+        # when
+        result = image_html(ICON_URL)
+        # then
+        expected = '<img src="https://images.evetech.net/types/670/icon?size=64">'
+        self.assertEqual(result, expected)
+
+    def test_should_include_one_class(self):
+        # when
+        result = image_html(ICON_URL, classes=["green"])
+        # then
+        expected = '<img class="green" src="https://images.evetech.net/types/670/icon?size=64">'
+        self.assertEqual(result, expected)
+
+    def test_should_include_multiple_classes(self):
+        # when
+        result = image_html(ICON_URL, classes=["green", "blue"])
+        # then
+        expected = '<img class="green blue" src="https://images.evetech.net/types/670/icon?size=64">'
+        self.assertEqual(result, expected)
+
+    def test_should_include_size(self):
+        # when
+        result = image_html(ICON_URL, size=128)
+        # then
+        expected = '<img width="128" height="128" src="https://images.evetech.net/types/670/icon?size=64">'
+        self.assertEqual(result, expected)
+
+    def test_should_include_classes_and_size(self):
+        # when
+        result = image_html(ICON_URL, classes=["green", "blue"], size=128)
+        # then
+        expected = '<img class="green blue" width="128" height="128" src="https://images.evetech.net/types/670/icon?size=64">'
+        self.assertEqual(result, expected)
+
+
+class TestBootstrapIconPlusTextHtml(TestCase):
+    def test_should_create_minimal(self):
+        # when
+        result = bootstrap_icon_plus_text_html(icon_url=ICON_URL, text="Alpha")
+        # then
+        self.assertEqual(
+            result,
+            (
+                '<img width="32" height="32" '
+                'src="https://images.evetech.net/types/670/icon?size=64"> '
+                '<span class="icon-plus-text">Alpha</span>'
+            ),
+        )
+
+    def test_should_create_link(self):
+        # when
+        result = bootstrap_icon_plus_text_html(
+            icon_url=ICON_URL, text="Alpha", url="www.example.com"
+        )
+        # then
+        self.assertEqual(
+            result,
+            (
+                '<img width="32" height="32" '
+                'src="https://images.evetech.net/types/670/icon?size=64"> '
+                '<a class="icon-plus-text" href="www.example.com">Alpha</a>'
+            ),
         )
 
 
