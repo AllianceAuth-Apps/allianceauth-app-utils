@@ -124,7 +124,7 @@ class EveCorporationInfoFactory(
 
     @factory.post_generation
     def create_alliance(obj, create, extracted, **kwargs):
-        if not create or extracted is False:
+        if not create or extracted is False or obj.alliance:
             return
         obj.alliance = EveAllianceInfoFactory(executor_corp_id=obj.corporation_id)
 
