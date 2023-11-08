@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.22.0] - 2023-11-08
+
+### Changed
+
+- Improved: `urls.static_file_absolute_url()`
+- Improved: `testdata_factories.EveCorporationInfoFactory`
+
 ## [1.21.0] - 2023-09-17
 
 ### Added
@@ -19,7 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
-- nowrap_html does not work
+- `views.nowrap_html()` does not work
 
 ## [1.20.1] - 2023-09-17
 
