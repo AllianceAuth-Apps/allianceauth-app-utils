@@ -1,5 +1,5 @@
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from app_utils.caching import ObjectCacheMixin
 
@@ -39,6 +39,7 @@ class FakeModel:
     objects = FakeManager()
 
 
+@override_settings(APP_UTILS_OBJECT_CACHE_DISABLED=False)
 class TestObjectCacheMixin(TestCase):
     def setUp(self) -> None:
         cache.clear()
@@ -111,6 +112,24 @@ class TestObjectCacheMixin(TestCase):
         # when
         FakeModel.objects.clear_cache(pk=obj.pk)
         new_obj = FakeModel.objects.get_cached(pk=obj.pk, select_related="dummy")
+
+        # then
+        self.assertEqual(new_obj.name, "Changed object")
+
+
+@override_settings(APP_UTILS_OBJECT_CACHE_DISABLED=True)
+class TestObjectCacheMixin2(TestCase):
+    def setUp(self) -> None:
+        cache.clear()
+
+    def test_should_fetch_from_db_when_cache_is_disabled(self):
+        # given
+        obj = FakeModel.objects.create(name="My object")
+        FakeModel.objects.get_cached(pk=obj.pk)
+        obj.name = "Changed object"
+
+        # when
+        new_obj = FakeModel.objects.get_cached(pk=obj.pk)
 
         # then
         self.assertEqual(new_obj.name, "Changed object")
