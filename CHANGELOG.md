@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.23.0] - 2023-11-14
+
+### Added
+
+- Setting to disable object cache in tests
+
 ## [1.22.0] - 2023-11-08
 
 ### Changed

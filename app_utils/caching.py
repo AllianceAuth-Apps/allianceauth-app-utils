@@ -4,6 +4,7 @@ import functools
 import hashlib
 from typing import Any, Optional
 
+from django.conf import settings
 from django.core.cache import cache
 from django.db import models
 
@@ -17,7 +18,9 @@ class ObjectCacheMixin:
         timeout: Optional[int] = None,
         select_related: Optional[str] = None,
     ) -> Any:
-        """Will return the requested object either from DB or from cache
+        """Return the requested object either from DB or from cache.
+
+        Can be disabled globally through the setting ``APP_UTILS_OBJECT_CACHE_DISABLED``.
 
         Args:
             pk: Primary key for object to fetch
@@ -42,6 +45,13 @@ class ObjectCacheMixin:
             obj = MyModel.objects.get_cached(pk=42, timeout=3600)
 
         """
+        is_cache_disabled = bool(
+            getattr(settings, "APP_UTILS_OBJECT_CACHE_DISABLED", False)
+        )
+        if is_cache_disabled:
+            value = self._fetch_object_for_cache(pk=pk, select_related=select_related)
+            return value
+
         func = functools.partial(
             self._fetch_object_for_cache, pk=pk, select_related=select_related
         )
