@@ -191,7 +191,7 @@ class UserMainFactory(UserFactory):
     def main_character(obj, create, _extracted, **kwargs):
         if not create:
             return
-        if "character" in kwargs:
+        if "character" in kwargs:  # TODO: maybe use extracted directly here?
             character = kwargs["character"]
         else:
             character_name = f"{obj.first_name} {obj.last_name}"

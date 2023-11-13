@@ -9,6 +9,7 @@ from typing import Any, Callable, List, Optional, Tuple, Union
 from bravado.exception import (
     HTTPBadGateway,
     HTTPBadRequest,
+    HTTPError,
     HTTPForbidden,
     HTTPGatewayTimeout,
     HTTPInternalServerError,
@@ -78,7 +79,7 @@ class BravadoOperationStub:
         return self.result(**kwargs)
 
 
-def build_http_error(http_code: int, text: Optional[str] = None) -> Exception:
+def build_http_error(http_code: int, text: Optional[str] = None) -> HTTPError:
     """Build a HTTP exception for django-esi from given http code."""
     exc_map = {
         400: HTTPBadRequest,
