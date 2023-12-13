@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.25.0] - 2023-12-14
+
+### Added
+
+- New helper function that makes it very easy to use Django in a normal Python script: `scripts.start_django()`
+
 ## [1.24.0] - 2023-11-28
 
 ### Added
