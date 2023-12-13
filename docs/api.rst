@@ -82,6 +82,12 @@ messages
 .. automodule:: app_utils.messages
     :members:
 
+scripts
+========
+
+.. automodule:: app_utils.scripts
+    :members:
+
 testing
 ========
 
