@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.26.0] - 2025-04-14
+
+### Added
+
+- Class for Bootstrap styles: `views.BootstrapStyleBS5`
+
+### Changed
+
+- Deprecated: `views.BootstrapStyle`
+- Deprecated: `views.fontawesome_modal_button_html`
+
 ## [1.25.0] - 2023-12-14
 
 ### Added
