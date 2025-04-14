@@ -45,10 +45,27 @@ class JSONResponseMixin:
 
 
 class BootstrapStyle(str, Enum):
-    """A Bootstrap context style names, e.g. for labels"""
+    """A Bootstrap context style names, e.g. for labels.
+
+    DEPRECATED: This class works for Bootstrap 3 only, which is no longer supported by AA.
+    """
 
     DANGER = "danger"  #:
     DEFAULT = "default"  #:
+    INFO = "info"  #:
+    PRIMARY = "primary"  #:
+    SUCCESS = "success"  #:
+    WARNING = "warning"  #:
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class BootstrapStyleBS5(str, Enum):
+    """A Bootstrap context style name, e.g. for labels"""
+
+    DANGER = "danger"  #:
+    DEFAULT = "secondary"  #:
     INFO = "info"  #:
     PRIMARY = "primary"  #:
     SUCCESS = "success"  #:
@@ -194,6 +211,8 @@ def fontawesome_modal_button_html(
     style=BootstrapStyle.DEFAULT,
 ) -> str:
     """Return HTML for a modal button with fontawesome symbols.
+
+    DEPRECATED: Only works with Bootstrap3, which is no longer supported by AA
 
     Args:
         modal_id: DOM ID of modal to invoke

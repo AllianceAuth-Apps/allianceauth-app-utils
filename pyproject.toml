@@ -22,10 +22,11 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
 ]
-dependencies = ["allianceauth>=3", "requests"]
+dependencies = ["allianceauth>=3,<5", "requests"]
 
 [project.urls]
 Homepage = "https://gitlab.com/ErikKalkoken/allianceauth-app-utils"
