@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Class for Bootstrap styles: `views.BootstrapStyleBS5`
+- Adds support for Python 3.12
 
 ### Changed
 
