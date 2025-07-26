@@ -56,7 +56,7 @@ class BravadoOperationStub:
         reason="OK",
     ):
         self._data = data
-        self._headers = headers if headers else {"x-pages": 1}
+        self._headers = headers if headers else {"X-Pages": 1}
         self._status_code = status_code
         self._reason = reason
         self.request_config = BravadoOperationStub.RequestConfig(also_return_response)
