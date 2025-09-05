@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.26.1] - 2025-07-27
+
+### Fixed
+
+- EsiClientStub x-pages error (#3) - Big thanks to @Geuthur for finding and fixing this bug.
+
 ## [1.26.0] - 2025-04-14
 
 ### Added

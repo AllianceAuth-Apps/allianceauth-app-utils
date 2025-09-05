@@ -5,8 +5,6 @@ import requests
 import requests_mock
 from celery.exceptions import Retry as CeleryRetry
 
-from django.test import TestCase
-
 from app_utils.esi import (
     EsiDailyDowntime,
     EsiErrorLimitExceeded,
@@ -15,11 +13,12 @@ from app_utils.esi import (
     fetch_esi_status,
     retry_task_if_esi_is_down,
 )
+from app_utils.testing import NoSocketsTestCase
 
 MODULE_PATH = "app_utils.esi"
 
 
-class TestEsiStatusExceptions(TestCase):
+class TestEsiStatusExceptions(NoSocketsTestCase):
     def test_can_create_exceptions(self):
         # given
         params = [EsiOffline, EsiDailyDowntime, EsiErrorLimitExceeded]
@@ -31,7 +30,7 @@ class TestEsiStatusExceptions(TestCase):
                 self.assertIsInstance(obj, exception_class)
 
 
-class TestEsiErrorLimitExceeded(TestCase):
+class TestEsiErrorLimitExceeded(NoSocketsTestCase):
     def test_can_create_exception_without_params(self):
         # when
         obj = EsiErrorLimitExceeded()
@@ -46,7 +45,7 @@ class TestEsiErrorLimitExceeded(TestCase):
         self.assertIn("ESI error limit has been exceeded", obj.message)
 
 
-class TestEsiStatus(TestCase):
+class TestEsiStatus(NoSocketsTestCase):
     def test_create_1(self):
         obj = EsiStatus(True)
         self.assertTrue(obj.is_online)
@@ -178,7 +177,7 @@ class TestEsiStatus(TestCase):
 
 
 @requests_mock.Mocker()
-class TestFetchEsiStatus(TestCase):
+class TestFetchEsiStatus(NoSocketsTestCase):
     @patch(MODULE_PATH + ".APPUTILS_ESI_DAILY_DOWNTIME_START", 11.0)
     @patch(MODULE_PATH + ".APPUTILS_ESI_DAILY_DOWNTIME_END", 11.25)
     def test_normal(self, requests_mocker):
@@ -424,7 +423,7 @@ class TestFetchEsiStatus(TestCase):
         self.assertFalse(status.is_online)
 
 
-class TestRetryTaskIfEsiIsDown(TestCase):
+class TestRetryTaskIfEsiIsDown(NoSocketsTestCase):
     @patch(MODULE_PATH + ".fetch_esi_status", lambda: EsiStatus(True, 99, 60))
     def test_should_do_nothing_if_esi_is_ok(self):
         # given
