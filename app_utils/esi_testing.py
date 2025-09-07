@@ -57,7 +57,7 @@ class BravadoOperationStub:
         reason="OK",
     ):
         self._data = data
-        self._headers = headers if headers else {"X-Pages": 1}
+        self._headers = headers if headers else {"X-Pages": 1, "ETag": "test-etag"}
         self._status_code = status_code
         self._reason = reason
         self.request_config = BravadoOperationStub.RequestConfig(also_return_response)
@@ -124,6 +124,7 @@ class EsiEndpoint:
     method: str
     primary_key: Union[str, Tuple[str, str], None] = None
     needs_token: bool = False
+    return_response: bool = False
     data: Union[dict, list, str, None] = None
     http_error_code: Optional[int] = None
     side_effect: Union[Callable, Exception, None] = None
@@ -246,7 +247,8 @@ class _EsiMethod:
                 f"No test data for {self._endpoint.primary_key} = {pk_value}"
             )
             raise build_http_error(404, text) from None
-
+        if self._endpoint.return_response:
+            return BravadoOperationStub(result, also_return_response=True)
         return BravadoOperationStub(result)
 
     @staticmethod
