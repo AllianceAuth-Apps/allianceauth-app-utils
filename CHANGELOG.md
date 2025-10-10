@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.27.0] - TBD
+
+### Changed
+
+- BREAKING CHANGE: Due to recent changes of the ESI status endpoint the error count feature no longer works and has been removed. esi.ESIStatus will now only report whether ESI is online, but no longer take error limits into account. related properties and the esi.EsiErrorLimitExceeded class have been deprecated and will be removed in future version.
+
 ## [1.26.1] - 2025-07-27
 
 ### Fixed

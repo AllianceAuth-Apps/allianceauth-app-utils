@@ -3,10 +3,12 @@
 import datetime as dt
 import logging
 import random
+import warnings
 from time import sleep
 from typing import Optional
 
 import requests
+from celery import Task
 
 from django.utils.timezone import now
 
@@ -48,10 +50,19 @@ class EsiDailyDowntime(EsiOffline):
 
 
 class EsiErrorLimitExceeded(EsiStatusException):
-    """ESI error limit exceeded error."""
+    """ESI error limit exceeded error.
+
+    DEPRECATED: This feature no longer works due to recent changes
+    of the status endpoint. This class will be removed in future versions.
+    """
 
     def __init__(self, retry_in: float = 60) -> None:
         """:meta private:"""
+        warnings.warn(
+            "EsiErrorLimitExceeded is deprecated and will be removed in future versions.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__("The ESI error limit has been exceeded.")
         self._retry_in = float(retry_in)
 
@@ -62,9 +73,9 @@ class EsiErrorLimitExceeded(EsiStatusException):
 
 
 class EsiStatus:
-    """Current status of ESI (immutable)."""
-
-    MAX_JITTER = 20
+    """Represents the current online status of ESI
+    and can report whether the current time is within th the planned daily downtime.
+    """
 
     def __init__(
         self,
@@ -75,12 +86,18 @@ class EsiStatus:
     ) -> None:
         self._is_online = bool(is_online)
         self._is_daily_downtime = is_daily_downtime
-        if error_limit_remain is None or error_limit_reset is None:
-            self._error_limit_remain = None
-            self._error_limit_reset = None
-        else:
-            self._error_limit_remain = int(error_limit_remain)
-            self._error_limit_reset = int(error_limit_reset)
+        if error_limit_remain:
+            warnings.warn(
+                "error_limit_remain is deprecated and will be removed in future versions.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+        if error_limit_reset:
+            warnings.warn(
+                "error_limit_reset is deprecated and will be removed in future versions.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
 
     @property
     def is_ok(self) -> bool:
@@ -99,33 +116,50 @@ class EsiStatus:
 
     @property
     def error_limit_remain(self) -> Optional[int]:
-        """Amount of remaining errors in current window."""
-        return self._error_limit_remain
+        """Amount of remaining errors in current window.
+
+        DEPRECATED: This feature no longer works due to recent changes
+        of the status endpoint. This property will be removed in future versions.
+        """
+        warnings.warn(
+            "error_limit_remain is deprecated and will be removed in future versions.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return None
 
     @property
     def error_limit_reset(self) -> Optional[int]:
-        """Seconds until current error window resets."""
-        return self._error_limit_reset
+        """Seconds until current error window resets.
+
+        DEPRECATED: This feature no longer works due to recent changes
+        of the status endpoint. This property will be removed in future versions.
+        """
+        warnings.warn(
+            "error_limit_reset is deprecated and will be removed in future versions.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return None
 
     @property
     def is_error_limit_exceeded(self) -> bool:
         """True when remain is below the threshold, else False.
+        Will also return False if remain/reset are not defined.
 
-        Will also return False if remain/reset are not defined
+        DEPRECATED: This feature no longer works due to recent changes
+        of the status endpoint. This property will be removed in future versions.
         """
+        warnings.warn(
+            "is_error_limit_exceeded is deprecated and will be removed in future versions.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         return bool(
             self.error_limit_remain
             and self.error_limit_reset
             and self.error_limit_remain <= APPUTILS_ESI_ERROR_LIMIT_THRESHOLD
         )
-
-    def error_limit_reset_w_jitter(self, max_jitter: Optional[int] = None) -> int:
-        """Calc seconds to retry in order to reach next error window incl. jitter."""
-        if self.error_limit_reset is None:
-            return 0
-        if not max_jitter or max_jitter < 1:
-            max_jitter = self.MAX_JITTER
-        return self.error_limit_reset + int(random.uniform(1, max_jitter))
 
     def raise_for_status(self):
         """Raise an exception if ESI if offline or the error limit is exceeded."""
@@ -133,12 +167,10 @@ class EsiStatus:
             if self.is_daily_downtime:
                 raise EsiDailyDowntime()
             raise EsiOffline()
-        if self.is_error_limit_exceeded:
-            raise EsiErrorLimitExceeded(retry_in=self.error_limit_reset_w_jitter())
 
 
 def fetch_esi_status(ignore_daily_downtime: bool = False) -> EsiStatus:
-    """Determine the current ESI status.
+    """Determine and return the current ESI status.
 
     Args:
         ignore_daily_downtime: When True will always make a request to ESI \
@@ -147,11 +179,13 @@ def fetch_esi_status(ignore_daily_downtime: bool = False) -> EsiStatus:
     is_daily_downtime = _is_daily_downtime()
     if not ignore_daily_downtime and is_daily_downtime:
         return EsiStatus(is_online=False, is_daily_downtime=True)
+
     try:
         response = _request_esi_status()
     except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
         logger.warning("Network error when trying to call ESI", exc_info=True)
         return EsiStatus(is_online=False, is_daily_downtime=is_daily_downtime)
+
     if not response.ok:
         is_online = False
     else:
@@ -159,24 +193,9 @@ def fetch_esi_status(ignore_daily_downtime: bool = False) -> EsiStatus:
             is_online = not response.json().get("vip")
         except ValueError:
             is_online = False
-    try:
-        remain = int(response.headers.get("X-Esi-Error-Limit-Remain"))  # type: ignore
-        reset = int(response.headers.get("X-Esi-Error-Limit-Reset"))  # type: ignore
-    except TypeError:
-        logger.warning("Failed to parse HTTP headers: %s", response.headers)
-        return EsiStatus(is_online=is_online, is_daily_downtime=is_daily_downtime)
-    logger.debug(
-        "ESI status: is_online: %s, error_limit_remain = %s, error_limit_reset = %s",
-        is_online,
-        remain,
-        reset,
-    )
-    return EsiStatus(
-        is_online=is_online,
-        error_limit_remain=remain,
-        error_limit_reset=reset,
-        is_daily_downtime=is_daily_downtime,
-    )
+
+    logger.debug("ESI status: is_online: %s", is_online)
+    return EsiStatus(is_online=is_online, is_daily_downtime=is_daily_downtime)
 
 
 def _is_daily_downtime() -> bool:
@@ -232,7 +251,7 @@ def _request_esi_status() -> requests.Response:
     return response
 
 
-def retry_task_if_esi_is_down(self):
+def retry_task_if_esi_is_down(task: Task):
     """Retry current celery task if ESI is not online or error threshold is exceeded.
 
     This function has to be called from inside a celery task!
@@ -247,9 +266,4 @@ def retry_task_if_esi_is_down(self):
         logger.warning(
             "ESI appears to be offline. Trying again in %d seconds.", countdown
         )
-        raise self.retry(countdown=countdown) from ex
-    except EsiErrorLimitExceeded as ex:
-        logger.warning(
-            "ESI error limit threshold reached. Trying again in %s seconds", ex.retry_in
-        )
-        raise self.retry(countdown=ex.retry_in) from ex
+        raise task.retry(countdown=countdown) from ex

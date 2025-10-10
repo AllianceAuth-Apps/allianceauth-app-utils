@@ -49,32 +49,22 @@ class TestEsiStatus(NoSocketsTestCase):
     def test_create_1(self):
         obj = EsiStatus(True)
         self.assertTrue(obj.is_online)
-        self.assertIsNone(obj.error_limit_remain)
-        self.assertIsNone(obj.error_limit_reset)
 
     def test_create_2(self):
         obj = EsiStatus(False, 1)
         self.assertFalse(obj.is_online)
-        self.assertIsNone(obj.error_limit_remain)
-        self.assertIsNone(obj.error_limit_reset)
 
     def test_create_3(self):
         obj = EsiStatus(True, None, 1)
         self.assertTrue(obj.is_online)
-        self.assertIsNone(obj.error_limit_remain)
-        self.assertIsNone(obj.error_limit_reset)
 
     def test_create_4(self):
         obj = EsiStatus(True, 10, 20)
         self.assertTrue(obj.is_online)
-        self.assertEqual(obj.error_limit_remain, 10)
-        self.assertEqual(obj.error_limit_reset, 20)
 
     def test_create_5(self):
         obj = EsiStatus(True, "10", "20")
         self.assertTrue(obj.is_online)
-        self.assertEqual(obj.error_limit_remain, 10)
-        self.assertEqual(obj.error_limit_reset, 20)
 
     @patch(MODULE_PATH + ".APPUTILS_ESI_ERROR_LIMIT_THRESHOLD", 25)
     def test_is_ok_should_be_true(self):
@@ -85,55 +75,6 @@ class TestEsiStatus(NoSocketsTestCase):
     def test_is_ok_should_be_false_1(self):
         obj = EsiStatus(False, error_limit_remain=30, error_limit_reset=20)
         self.assertFalse(obj.is_ok)
-
-    @patch(MODULE_PATH + ".APPUTILS_ESI_ERROR_LIMIT_THRESHOLD", 25)
-    def test_is_ok_should_be_false_2(self):
-        obj = EsiStatus(True, error_limit_remain=20, error_limit_reset=20)
-        self.assertFalse(obj.is_ok)
-
-    @patch(MODULE_PATH + ".APPUTILS_ESI_ERROR_LIMIT_THRESHOLD", 25)
-    def test_is_error_limit_exceeded_1(self):
-        obj = EsiStatus(True, error_limit_remain=30, error_limit_reset=20)
-        self.assertFalse(obj.is_error_limit_exceeded)
-
-    @patch(MODULE_PATH + ".APPUTILS_ESI_ERROR_LIMIT_THRESHOLD", 25)
-    def test_is_error_limit_exceeded_2(self):
-        obj = EsiStatus(True, error_limit_remain=10, error_limit_reset=20)
-        self.assertTrue(obj.is_error_limit_exceeded)
-
-    @patch(MODULE_PATH + ".APPUTILS_ESI_ERROR_LIMIT_THRESHOLD", 25)
-    def test_is_error_limit_exceeded_3(self):
-        obj = EsiStatus(True, error_limit_remain=10)
-        self.assertFalse(obj.is_error_limit_exceeded)
-
-    @patch(MODULE_PATH + ".EsiStatus.MAX_JITTER", 20)
-    def test_error_limit_reset_w_jitter_1(self):
-        # given
-        obj = EsiStatus(True, error_limit_remain=30, error_limit_reset=20)
-        # when/then
-        for _ in range(1000):
-            result = obj.error_limit_reset_w_jitter()
-            self.assertGreaterEqual(result, 21)
-            self.assertLessEqual(result, 41)
-
-    @patch(MODULE_PATH + ".EsiStatus.MAX_JITTER", 20)
-    def test_error_limit_reset_w_jitter_2(self):
-        # given
-        obj = EsiStatus(True, error_limit_remain=30, error_limit_reset=20)
-        # when/then
-        for _ in range(1000):
-            result = obj.error_limit_reset_w_jitter(10)
-            self.assertGreaterEqual(result, 11)
-            self.assertLessEqual(result, 31)
-
-    @patch(MODULE_PATH + ".EsiStatus.MAX_JITTER", 20)
-    def test_error_limit_reset_w_jitter_3(self):
-        # given
-        obj = EsiStatus(True)
-        # when
-        result = obj.error_limit_reset_w_jitter(10)
-        # then
-        self.assertEqual(result, 0)
 
     def test_raise_for_status_1(self):
         """When no error condition is met, do nothing"""
@@ -168,13 +109,6 @@ class TestEsiStatus(NoSocketsTestCase):
         with self.assertRaises(EsiOffline):
             obj.raise_for_status()
 
-    @patch(MODULE_PATH + ".APPUTILS_ESI_ERROR_LIMIT_THRESHOLD", 25)
-    def test_raise_for_status_4(self):
-        """When ESI error limit is exceeded, then raise exception"""
-        obj = EsiStatus(True, error_limit_remain=15, error_limit_reset=20)
-        with self.assertRaises(EsiErrorLimitExceeded):
-            obj.raise_for_status()
-
 
 @requests_mock.Mocker()
 class TestFetchEsiStatus(NoSocketsTestCase):
@@ -203,8 +137,8 @@ class TestFetchEsiStatus(NoSocketsTestCase):
             status = fetch_esi_status()
         # then
         self.assertTrue(status.is_online)
-        self.assertEqual(status.error_limit_remain, 40)
-        self.assertEqual(status.error_limit_reset, 30)
+        self.assertIsNone(status.error_limit_remain)
+        self.assertIsNone(status.error_limit_reset)
 
     def test_esi_offline(self, requests_mocker):
         """When ESI is offline and header is complete, then report status accordingly"""
@@ -219,8 +153,8 @@ class TestFetchEsiStatus(NoSocketsTestCase):
         )
         status = fetch_esi_status()
         self.assertFalse(status.is_online)
-        self.assertEqual(status.error_limit_remain, 40)
-        self.assertEqual(status.error_limit_reset, 30)
+        self.assertIsNone(status.error_limit_remain)
+        self.assertIsNone(status.error_limit_reset)
 
     def test_esi_vip(self, requests_mocker):
         """When ESI is offline and header is complete, then report status accordingly"""
@@ -240,8 +174,8 @@ class TestFetchEsiStatus(NoSocketsTestCase):
         )
         status = fetch_esi_status()
         self.assertFalse(status.is_online)
-        self.assertEqual(status.error_limit_remain, 40)
-        self.assertEqual(status.error_limit_reset, 30)
+        self.assertIsNone(status.error_limit_remain)
+        self.assertIsNone(status.error_limit_reset)
 
     def test_esi_invalid_json(self, requests_mocker):
         """When ESI response JSON can not be parse, then report as offline"""
@@ -256,8 +190,8 @@ class TestFetchEsiStatus(NoSocketsTestCase):
         )
         status = fetch_esi_status()
         self.assertFalse(status.is_online)
-        self.assertEqual(status.error_limit_remain, 40)
-        self.assertEqual(status.error_limit_reset, 30)
+        self.assertIsNone(status.error_limit_remain)
+        self.assertIsNone(status.error_limit_reset)
 
     def test_headers_missing(self, requests_mocker):
         """When header is incomplete, then report error limits with None"""
@@ -445,16 +379,3 @@ class TestRetryTaskIfEsiIsDown(NoSocketsTestCase):
         self.assertTrue(task.retry.called)
         _, kwargs = task.retry.call_args
         self.assertTrue(kwargs["countdown"])
-
-    @patch(MODULE_PATH + ".fetch_esi_status", lambda: EsiStatus(True, 1, 60))
-    def test_should_retry_if_esi_error_threshold_exceeded(self):
-        # given
-        task = Mock()
-        task.retry.side_effect = CeleryRetry()
-        # when
-        with self.assertRaises(CeleryRetry):
-            retry_task_if_esi_is_down(task)
-        # then
-        self.assertTrue(task.retry.called)
-        _, kwargs = task.retry.call_args
-        self.assertGreaterEqual(kwargs["countdown"], 60)
