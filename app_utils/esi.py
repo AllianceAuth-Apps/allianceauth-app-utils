@@ -4,24 +4,24 @@ import datetime as dt
 import logging
 import random
 import warnings
-from time import sleep
 from typing import Optional
 
-import requests
+from bravado.exception import HTTPError
 from celery import Task
 
 from django.utils.timezone import now
+from esi.clients import EsiClientProvider
 
-from app_utils.logging import LoggerAddTag
-
-from . import __title__, __version__
-from ._app_settings import (
+from app_utils import __title__, __version__
+from app_utils._app_settings import (
     APPUTILS_ESI_DAILY_DOWNTIME_END,
     APPUTILS_ESI_DAILY_DOWNTIME_START,
-    APPUTILS_ESI_ERROR_LIMIT_THRESHOLD,
 )
+from app_utils.logging import LoggerAddTag
 
 logger = LoggerAddTag(logging.getLogger(__name__), __title__)
+
+_esi = EsiClientProvider(ua_appname="allianceauth-app-utils", ua_version=__version__)
 
 
 class EsiStatusException(Exception):
@@ -155,11 +155,7 @@ class EsiStatus:
             category=DeprecationWarning,
             stacklevel=2,
         )
-        return bool(
-            self.error_limit_remain
-            and self.error_limit_reset
-            and self.error_limit_remain <= APPUTILS_ESI_ERROR_LIMIT_THRESHOLD
-        )
+        return False
 
     def raise_for_status(self):
         """Raise an exception if ESI if offline or the error limit is exceeded."""
@@ -181,19 +177,15 @@ def fetch_esi_status(ignore_daily_downtime: bool = False) -> EsiStatus:
         return EsiStatus(is_online=False, is_daily_downtime=True)
 
     try:
-        response = _request_esi_status()
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+        status = _esi.client.Status.get_status().result()
+    except ConnectionError:
         logger.warning("Network error when trying to call ESI", exc_info=True)
         return EsiStatus(is_online=False, is_daily_downtime=is_daily_downtime)
+    except HTTPError:
+        logger.warning("HTTP error when trying to call ESI", exc_info=True)
+        return EsiStatus(is_online=False, is_daily_downtime=is_daily_downtime)
 
-    if not response.ok:
-        is_online = False
-    else:
-        try:
-            is_online = not response.json().get("vip")
-        except ValueError:
-            is_online = False
-
+    is_online = status.get("vip") is None
     logger.debug("ESI status: is_online: %s", is_online)
     return EsiStatus(is_online=is_online, is_daily_downtime=is_daily_downtime)
 
@@ -217,47 +209,13 @@ def _convert_float_hours(hours_float: float) -> tuple:
     return hours, minutes
 
 
-def _request_esi_status() -> requests.Response:
-    """Fetch current status from ESI. Retry on common HTTP errors."""
-    max_retries = 3
-    retry_count = 0
-    while True:
-        response = requests.get(
-            "https://esi.evetech.net/latest/status/",
-            timeout=(5, 30),
-            headers={"User-Agent": f"{__package__};{__version__}"},
-        )
-        if response.status_code not in {
-            502,  # HTTPBadGateway
-            503,  # HTTPServiceUnavailable
-            504,  # HTTPGatewayTimeout
-        }:
-            break
-
-        retry_count += 1
-        if retry_count > max_retries:
-            break
-
-        logger.warning(
-            "HTTP status code %s - Try %s/%s",
-            response.status_code,
-            retry_count,
-            max_retries,
-        )
-
-        wait_secs = 0.1 * (random.uniform(2, 4) ** (retry_count - 1))
-        sleep(wait_secs)
-
-    return response
-
-
 def retry_task_if_esi_is_down(task: Task):
     """Retry current celery task if ESI is not online or error threshold is exceeded.
 
     This function has to be called from inside a celery task!
 
     Args:
-        self: Current celery task from `@shared_task(bind=True)`
+        task: Current celery task from `@shared_task(bind=True)`
     """
     try:
         fetch_esi_status().raise_for_status()
