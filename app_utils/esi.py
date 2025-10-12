@@ -101,8 +101,8 @@ class EsiStatus:
 
     @property
     def is_ok(self) -> bool:
-        """True if ESI is online and below error limit, else False."""
-        return self.is_online and not self.is_error_limit_exceeded
+        """True if ESI was online when this object was created."""
+        return self.is_online
 
     @property
     def is_daily_downtime(self) -> bool:
@@ -111,7 +111,7 @@ class EsiStatus:
 
     @property
     def is_online(self) -> bool:
-        """True if ESI is online, else False."""
+        """True if ESI was online when this object was created."""
         return self._is_online
 
     @property
@@ -177,11 +177,11 @@ def fetch_esi_status(ignore_daily_downtime: bool = False) -> EsiStatus:
         return EsiStatus(is_online=False, is_daily_downtime=True)
 
     try:
-        status = _esi.client.Status.get_status().result()
+        status = _esi.client.Status.get_status().result(retries=1)
     except ConnectionError:
         logger.warning("Network error when trying to call ESI", exc_info=True)
         return EsiStatus(is_online=False, is_daily_downtime=is_daily_downtime)
-    except HTTPError:
+    except HTTPError:  # Will usually return http error 502 when offline
         logger.warning("HTTP error when trying to call ESI", exc_info=True)
         return EsiStatus(is_online=False, is_daily_downtime=is_daily_downtime)
 

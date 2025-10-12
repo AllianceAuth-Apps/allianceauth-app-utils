@@ -86,6 +86,7 @@ def build_http_error(http_code: int, text: Optional[str] = None) -> HTTPError:
         401: HTTPUnauthorized,
         403: HTTPForbidden,
         404: HTTPNotFound,
+        420: HTTPError,
         500: HTTPInternalServerError,
         502: HTTPBadGateway,
         503: HTTPServiceUnavailable,

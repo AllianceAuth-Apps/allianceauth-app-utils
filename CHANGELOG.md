@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- BREAKING CHANGE: Due to recent changes of the ESI status endpoint the error count feature no longer works and has been removed. esi.ESIStatus will now only report whether ESI is online, but no longer take error limits into account. related properties and the esi.EsiErrorLimitExceeded class have been deprecated and will be removed in future version.
+- BREAKING CHANGE: Due to [recent changes](https://developers.eveonline.com/blog/hold-your-horses-introducing-rate-limiting-to-esi) of the ESI status endpoint the error count feature no longer works and has been removed. Therefore esi.ESIStatus will now only report whether ESI is online, but no longer take error limits into account. Related properties have been kept in place for backwards compatibility, but no longer return any values. The esi.EsiErrorLimitExceeded class have been deprecated and will be removed in future version.
 
 ## [1.26.1] - 2025-07-27
 

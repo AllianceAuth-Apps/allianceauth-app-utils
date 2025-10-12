@@ -207,7 +207,7 @@ class TestFetchEsiStatus(NoSocketsTestCase):
                 }
             },
             endpoints=[EsiEndpoint("Status", "get_status")],
-            http_error=True,
+            http_error=502,
         )
         # when
         status = fetch_esi_status()
