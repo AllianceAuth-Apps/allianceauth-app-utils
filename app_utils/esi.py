@@ -4,6 +4,7 @@ import datetime as dt
 import logging
 import random
 import warnings
+from contextlib import contextmanager
 from typing import Optional
 
 from bravado.exception import HTTPError
@@ -225,3 +226,50 @@ def retry_task_if_esi_is_down(task: Task):
             "ESI appears to be offline. Trying again in %d seconds.", countdown
         )
         raise task.retry(countdown=countdown) from ex
+
+
+@contextmanager
+def retry_task_on_esi_error_and_offline(task: Task, info: str):
+    """Context manager that retries a task when the error error limit has been exceeded
+    or when ESI appears to be offline.
+
+    Args:
+    - task: current celery task
+    - info: text describing what is being retried
+
+    Example:
+
+    .. code-block:: python
+
+        from app_utils.esi import retry_task_on_esi_error_and_offline
+
+        @shared_task(bind=True)
+        def my_task(self):
+             with retry_task_on_esi_error_and_offline(self, "my_task"):
+                # work that might trigger an HTTPError
+
+    '''
+    """
+    try:
+        yield
+    except HTTPError as ex:
+        backoff_jitter = int(random.uniform(2, 4) ** task.request.retries)
+        if ex.status_code == 420:  # ESI error limit exceeded
+            countdown = 60 + backoff_jitter
+            logger.warning(
+                "%s: ESI error limit exceeded. Trying again in %s seconds",
+                info,
+                countdown,
+            )
+            raise task.retry(countdown=countdown) from ex
+
+        if ex.status_code in {502, 503}:  # ESI offline
+            countdown = (15 + backoff_jitter) * 60
+            logger.warning(
+                "%s: ESI appears to be offline. Trying again in %d seconds",
+                info,
+                countdown,
+            )
+            raise task.retry(countdown=countdown) from ex
+
+        raise ex
