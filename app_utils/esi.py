@@ -210,7 +210,7 @@ def _convert_float_hours(hours_float: float) -> tuple:
 
 
 def retry_task_if_esi_is_down(task: Task):
-    """Retry current celery task if ESI is not online or error threshold is exceeded.
+    """Retry current celery task if ESI is not online.
 
     This function has to be called from inside a celery task!
 
