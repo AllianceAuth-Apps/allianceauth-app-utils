@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.27.0] - 2025-10-12
+
+### Added
+
+- `esi.retry_task_on_esi_error_and_offline`: Context manager that retries a task when the error error limit has been exceeded or when ESI appears to be offline
+
+### Changed
+
+- BREAKING CHANGE: Due to [recent changes](https://developers.eveonline.com/blog/hold-your-horses-introducing-rate-limiting-to-esi) of the ESI status endpoint the error count feature no longer works and has been removed. Consequently, `esi.ESIStatus` now only reports whether ESI is online and no longer knows about error limit counts. Related properties have been kept in place for backwards compatibility, but no longer return any values. Related properties and the `esi.EsiErrorLimitExceeded` exception have been deprecated and will be removed in future version.
+
 ## [1.26.1] - 2025-07-27
 
 ### Fixed
