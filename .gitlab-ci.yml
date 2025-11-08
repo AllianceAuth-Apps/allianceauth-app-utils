@@ -27,7 +27,7 @@ pre-commit:
 check-docs:
     stage: checks
     extends: .tox_setup
-    image: python:3.8-bookworm
+    image: python:3.10-bookworm
     script:
         - tox -e docs
 
