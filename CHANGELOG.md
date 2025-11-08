@@ -23,12 +23,13 @@ New minimum requirements are:
 
 - `testing.CacheFake`: A fake for replacing Django's cache in tests
 - `testing.reset_celery_once_locks`: Function for deleting celery once locks
+- `esi.retry_task_on_esi_issue`: replaces `esi.retry_task_on_esi_error_and_offline` and adds support for rate limit errors
 
 ### Changed
 
 - BREAKING CHANGE: Drops support for Python 3.8, 3.9
 - Adds support for Python 3.12, 3.13
-- `esi.retry_task_on_esi_error_and_offline`: Will now also retry when the rate limit is exceeded
+- `esi.retry_task_on_esi_error_and_offline`: marked as deprecated
 
 ## [1.27.0] - 2025-10-12
 

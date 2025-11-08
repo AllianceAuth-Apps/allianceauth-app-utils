@@ -231,7 +231,63 @@ def retry_task_if_esi_is_down(task: Task):
 
 
 @contextmanager
-def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
+def retry_task_on_esi_error_and_offline(task: Task, info: str):
+    """Context manager that retries a task when the error error limit has been exceeded
+    or when ESI appears to be offline.
+
+    DEPRECATED: This context manager is deprecated and will be removed in future version.
+    Please switch to retry_task_on_esi_issue.
+
+    Args:
+        task: current celery task
+        info: text describing what is being retried
+
+    Example:
+
+    .. code-block:: python
+
+        from app_utils.esi import retry_task_on_esi_error_and_offline
+
+        @shared_task(bind=True)
+        def my_task(self):
+             with retry_task_on_esi_error_and_offline(self, "my_task"):
+                # work that might trigger an HTTPError
+
+    '''
+    """
+
+    def retry(exc: Exception, retry_after: float, issue: str):
+        backoff_jitter = int(random.uniform(2, 4) ** task.request.retries)
+        countdown = retry_after + backoff_jitter
+        logger.warning(
+            "%s: %s. Trying again in %s seconds",
+            info,
+            issue,
+            countdown,
+        )
+        raise task.retry(countdown=countdown, exc=exc)
+
+    warnings.warn(
+        "retry_task_on_esi_error_and_offline() is deprecated "
+        "and will be removed in future versions.",
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
+    try:
+        yield
+    except ESIErrorLimitException as exc:
+        retry(exc, exc.reset or 60, "ESI error limit exceeded")
+    except HTTPError as exc:
+        if exc.status_code in {
+            HTTPStatus.BAD_GATEWAY,
+            HTTPStatus.SERVICE_UNAVAILABLE,
+        }:
+            retry(exc, 60, "ESI appears to be offline")
+        raise exc
+
+
+@contextmanager
+def retry_task_on_esi_issue(task: Task):
     """Retries task when a recoverable ESI issue is encountered
     in the wrapped code block.
 
@@ -242,8 +298,6 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
 
     Args:
         task: current celery task
-        info: optional text describing the context of the retry.
-        will use the task name if not specified.
 
     Example:
 
@@ -265,7 +319,7 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
         countdown = retry_after + backoff_jitter
         logger.warning(
             "%s: %s. Trying again in %s seconds",
-            info or task.name,
+            task.name,
             issue,
             countdown,
         )
