@@ -5,6 +5,7 @@ import logging
 import random
 import warnings
 from contextlib import contextmanager
+from http import HTTPStatus
 from typing import Optional
 
 from bravado.exception import HTTPError
@@ -12,6 +13,7 @@ from celery import Task
 
 from django.utils.timezone import now
 from esi.clients import EsiClientProvider
+from esi.exceptions import ESIBucketLimitException, ESIErrorLimitException
 
 from app_utils import __title__, __version__
 from app_utils._app_settings import (
@@ -229,13 +231,19 @@ def retry_task_if_esi_is_down(task: Task):
 
 
 @contextmanager
-def retry_task_on_esi_error_and_offline(task: Task, info: str):
-    """Context manager that retries a task when the error error limit has been exceeded
-    or when ESI appears to be offline.
+def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
+    """Retries task when a recoverable ESI issue is encountered
+    in the wrapped code block.
+
+    Retries on:
+        * Error limit is exceeded
+        * Rate limit is exceeded for the current rate limit group
+        * Temporary outage (HTTP 502, 503)
 
     Args:
-    - task: current celery task
-    - info: text describing what is being retried
+        task: current celery task
+        info: optional text describing the context of the retry.
+        will use the task name if not specified.
 
     Example:
 
@@ -245,31 +253,42 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str):
 
         @shared_task(bind=True)
         def my_task(self):
-             with retry_task_on_esi_error_and_offline(self, "my_task"):
-                # work that might trigger an HTTPError
+            ...
+            with retry_task_on_esi_error_and_offline(self):
+                # Code that makes ESI requests via django-esi
 
     '''
     """
+
+    def retry(exc: Exception, retry_after: float, issue: str):
+        backoff_jitter = int(random.uniform(2, 4) ** task.request.retries)
+        countdown = retry_after + backoff_jitter
+        logger.warning(
+            "%s: %s. Trying again in %s seconds",
+            info or task.name,
+            issue,
+            countdown,
+        )
+        raise task.retry(countdown=countdown, exc=exc)
+
     try:
         yield
-    except HTTPError as ex:
-        backoff_jitter = int(random.uniform(2, 4) ** task.request.retries)
-        if ex.status_code == 420:  # ESI error limit exceeded
-            countdown = 60 + backoff_jitter
-            logger.warning(
-                "%s: ESI error limit exceeded. Trying again in %s seconds",
-                info,
-                countdown,
-            )
-            raise task.retry(countdown=countdown) from ex
-
-        if ex.status_code in {502, 503}:  # ESI offline
-            countdown = (15 + backoff_jitter) * 60
-            logger.warning(
-                "%s: ESI appears to be offline. Trying again in %d seconds",
-                info,
-                countdown,
-            )
-            raise task.retry(countdown=countdown) from ex
-
-        raise ex
+    except ESIErrorLimitException as exc:
+        retry(exc, exc.reset or 60, "ESI error limit exceeded")
+    except ESIBucketLimitException as exc:
+        try:
+            retry_after = exc.reset or exc.bucket.window
+        except AttributeError:
+            retry_after = 900
+        try:
+            slug = exc.bucket.slug
+        except AttributeError:
+            slug = "?"
+        retry(exc, retry_after, f"ESI rate limit exceeded for {slug}")
+    except HTTPError as exc:
+        if exc.status_code in {
+            HTTPStatus.BAD_GATEWAY,
+            HTTPStatus.SERVICE_UNAVAILABLE,
+        }:
+            retry(exc, 60, "ESI appears to be offline")
+        raise exc

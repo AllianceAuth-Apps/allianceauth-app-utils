@@ -5,6 +5,9 @@ from bravado.exception import HTTPError
 from celery import Task
 from celery.exceptions import Retry as CeleryRetry
 
+from esi.exceptions import ESIBucketLimitException, ESIErrorLimitException
+from esi.rate_limiting import ESIRateLimitBucket
+
 from app_utils.esi import (
     EsiDailyDowntime,
     EsiErrorLimitExceeded,
@@ -250,18 +253,19 @@ class TestRetryTaskIfEsiIsDown(NoSocketsTestCase):
         self.assertTrue(kwargs["countdown"])
 
 
-class TestRetryTaskOnEsiErrorExceededAndOffline(NoSocketsTestCase):
+class TestRetryTaskOnEsiIssues(NoSocketsTestCase):
     def test_should_complete_normally_when_no_issue(self):
         task = Mock(spec=Task)
-        with retry_task_on_esi_error_and_offline(task, "dummy"):
+        with retry_task_on_esi_error_and_offline(task):
             pass
 
     def test_should_retry_when_esi_is_offline_1(self):
         task = Mock(spec=Task)
+        task.name = "task_name"
         task.request.retries = 1
         task.retry.side_effect = CeleryRetry
         with self.assertRaises(CeleryRetry):
-            with retry_task_on_esi_error_and_offline(task, "dummy"):
+            with retry_task_on_esi_error_and_offline(task):
                 raise build_http_error(502)
 
     def test_should_retry_when_esi_is_offline_2(self):
@@ -269,16 +273,27 @@ class TestRetryTaskOnEsiErrorExceededAndOffline(NoSocketsTestCase):
         task.request.retries = 1
         task.retry.side_effect = CeleryRetry
         with self.assertRaises(CeleryRetry):
-            with retry_task_on_esi_error_and_offline(task, "dummy"):
+            with retry_task_on_esi_error_and_offline(task):
                 raise build_http_error(503)
 
-    def test_should_retry_when_error_limit_exceeded(self):
+    def test_should_retry_when_error_limit_is_exceeded(self):
         task = Mock(spec=Task)
         task.request.retries = 1
         task.retry.side_effect = CeleryRetry
         with self.assertRaises(CeleryRetry):
-            with retry_task_on_esi_error_and_offline(task, "dummy"):
-                raise build_http_error(420)
+            with retry_task_on_esi_error_and_offline(task):
+                raise ESIErrorLimitException(reset=30)
+
+    def test_should_retry_when_rate_limit_is_exceeded(self):
+        task = Mock(spec=Task)
+        task.request.retries = 1
+        task.retry.side_effect = CeleryRetry
+        bucket = Mock(spec=ESIRateLimitBucket)
+        bucket.slug = "bucket-slug"
+        bucket.window = 300
+        with self.assertRaises(CeleryRetry):
+            with retry_task_on_esi_error_and_offline(task):
+                raise ESIBucketLimitException(bucket=bucket, reset=30)
 
     def test_should_reraise_other_http_errors(self):
         task = Mock(spec=Task)
@@ -286,5 +301,5 @@ class TestRetryTaskOnEsiErrorExceededAndOffline(NoSocketsTestCase):
         task.retry.side_effect = CeleryRetry
 
         with self.assertRaises(HTTPError):
-            with retry_task_on_esi_error_and_offline(task, "dummy"):
+            with retry_task_on_esi_error_and_offline(task):
                 raise build_http_error(400)
