@@ -9,7 +9,7 @@ import os
 import re
 import socket
 from itertools import count
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from django.contrib.auth.models import Group, User
 from django.db import models
@@ -443,3 +443,42 @@ def reset_celery_once_locks(app_label: str) -> int:
         return 0
     deleted = r.delete(*keys)
     return deleted
+
+
+class CacheFake:
+    """A fake for replacing Django's cache in tests.
+
+    Example:
+
+    .. code-block:: python
+
+        from app_utils.esi import CacheFake
+
+        @patch("my_module.cache", new_callable=CacheFake)
+        def test_my_function(self):
+            ...
+
+    """
+
+    def __init__(self):
+        self._cache: Dict[str, Any] = {}
+
+    def clear(self) -> None:
+        self._cache.clear()
+
+    def delete(self, key: str, version: int = None) -> None:
+        try:
+            del self._cache[key]
+        except KeyError:
+            pass
+
+    def get(self, key: str, default: Any = None, version: int = None) -> Any:
+        try:
+            return self._cache[key]
+        except KeyError:
+            return default
+
+    def set(
+        self, key: str, value: Any, timeout: int = None, version: int = None
+    ) -> None:
+        self._cache[key] = value

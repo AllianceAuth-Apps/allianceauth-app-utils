@@ -7,10 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-## [1.28.0b1] - TBD
+## [1.28.0a1] - TBD
 
 ### Added
 
+- `testing.CacheFake`: A fake for replacing Django's cache in tests
 - `testing.reset_celery_once_locks`: Function for deleting celery once locks
 
 ### Changed
