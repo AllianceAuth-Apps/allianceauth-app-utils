@@ -3,7 +3,7 @@ myst_parser
 sphinxcontrib-django2
 
 # autodoc
-django>=3.2,<5
+django>=4,<5
 django-celery-beat>=2
 django-bootstrap-form
 django-sortedm2m

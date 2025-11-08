@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [2.0.0a1] - TBD
 
+### Update notes
+
+This release adds tools for supporting the new ESI rate limits.
+
+New minimum requirements are:
+
+- django-esi 8
+- Alliance Auth 4
+- Python 3.10 (inherited from django-esi 8)
+
 ### Added
 
 - `testing.CacheFake`: A fake for replacing Django's cache in tests
@@ -16,7 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- BREAKING CHANGE: Drops support for Python 3.8, 3.9 (inherited from django-esi v8)
+- BREAKING CHANGE: Drops support for Python 3.8, 3.9
 - Adds support for Python 3.12, 3.13
 - `esi.retry_task_on_esi_error_and_offline`: Will now also retry when the rate limit is exceeded
 
