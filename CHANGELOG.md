@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-## [1.28.0a1] - TBD
+## [2.0.0a1] - TBD
 
 ### Added
 
@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- BREAKING CHANGE: Drops support for Python 3.8, 3.9 (inherited from django-esi v8)
+- Adds support for Python 3.12, 3.13
 - `esi.retry_task_on_esi_error_and_offline`: Will now also retry when the rate limit is exceeded
 
 ## [1.27.0] - 2025-10-12
