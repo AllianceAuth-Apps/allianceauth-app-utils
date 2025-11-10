@@ -9,7 +9,7 @@ import os
 import re
 import socket
 from itertools import count
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from django.contrib.auth.models import Group, User
 from django.db import models
@@ -26,10 +26,12 @@ from allianceauth.eveonline.models import (
 )
 from allianceauth.groupmanagement.models import AuthGroup
 from allianceauth.tests.auth_utils import AuthUtils
-
-from .datetime import dt_eveformat
-from .esi_testing import BravadoOperationStub, BravadoResponseStub  # noqa: F401
-from .helpers import random_string
+from app_utils.datetime import dt_eveformat
+from app_utils.esi_testing import (  # noqa: F401
+    BravadoOperationStub,
+    BravadoResponseStub,
+)
+from app_utils.helpers import random_string
 
 
 def generate_invalid_pk(MyModel: Any) -> int:
@@ -420,3 +422,63 @@ def next_number(key=None) -> int:
         pass
     next_number._counter[key] = count(start=1)
     return next(next_number._counter[key])
+
+
+def reset_celery_once_locks(app_label: str) -> int:
+    """Reset celery once locks on all tasks of an app.
+
+    Args:
+        app_label: label of the app
+
+    Returns:
+        number of deleted locks
+    """
+    from app_utils.allianceauth import get_redis_client
+
+    if not app_label:
+        raise ValueError("Must specify an app label")
+    r = get_redis_client()
+    keys = r.keys(f":?:qo_{app_label}.*")
+    if not keys:
+        return 0
+    deleted = r.delete(*keys)
+    return deleted
+
+
+class CacheFake:
+    """A fake for replacing Django's cache in tests.
+
+    Example:
+
+    .. code-block:: python
+
+        from app_utils.esi import CacheFake
+
+        @patch("my_module.cache", new_callable=CacheFake)
+        def test_my_function(self):
+            ...
+
+    """
+
+    def __init__(self):
+        self._cache: Dict[str, Any] = {}
+
+    def clear(self) -> None:
+        self._cache.clear()
+
+    def delete(self, key: str, version: int = None) -> None:
+        try:
+            del self._cache[key]
+        except KeyError:
+            pass
+
+    def get(self, key: str, default: Any = None, version: int = None) -> Any:
+        try:
+            return self._cache[key]
+        except KeyError:
+            return default
+
+    def set(
+        self, key: str, value: Any, timeout: int = None, version: int = None
+    ) -> None:
+        self._cache[key] = value
