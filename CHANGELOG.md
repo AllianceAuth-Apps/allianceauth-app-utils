@@ -7,11 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-## [2.0.0a1] - TBD
+## [2.0.0b1] - 2025-11-11
 
-### Update notes
-
-This release adds tools for supporting the new ESI rate limits.
+This release adds support for ESI rate limits and contains breaking changes.
 
 New minimum requirements are:
 
