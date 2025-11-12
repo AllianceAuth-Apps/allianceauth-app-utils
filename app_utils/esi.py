@@ -1,7 +1,6 @@
 """Helpers for working with ESI."""
 
 import datetime as dt
-import logging
 import random
 import warnings
 from contextlib import contextmanager
@@ -15,6 +14,7 @@ from django.utils.timezone import now
 from esi.clients import EsiClientProvider
 from esi.exceptions import ESIBucketLimitException, ESIErrorLimitException
 
+from allianceauth.services.hooks import get_extension_logger
 from app_utils import __title__, __version__
 from app_utils._app_settings import (
     APPUTILS_ESI_DAILY_DOWNTIME_END,
@@ -22,7 +22,7 @@ from app_utils._app_settings import (
 )
 from app_utils.logging import LoggerAddTag
 
-logger = LoggerAddTag(logging.getLogger(__name__), __title__)
+logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 _esi = EsiClientProvider(ua_appname="allianceauth-app-utils", ua_version=__version__)
 
