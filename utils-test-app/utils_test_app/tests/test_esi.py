@@ -276,7 +276,15 @@ class TestRetryTaskOnEsiErrorAndOffline(NoSocketsTestCase):
             with retry_task_on_esi_error_and_offline(task, "dummy"):
                 raise build_http_error(503)
 
-    def test_should_retry_when_error_limit_is_exceeded(self):
+    def test_should_retry_when_error_limit_is_exceeded_oa2(self):
+        task = Mock(spec=Task)
+        task.request.retries = 1
+        task.retry.side_effect = CeleryRetry
+        with self.assertRaises(CeleryRetry):
+            with retry_task_on_esi_error_and_offline(task, "dummy"):
+                raise build_http_error(420)
+
+    def test_should_retry_when_error_limit_is_exceeded_oa3(self):
         task = Mock(spec=Task)
         task.request.retries = 1
         task.retry.side_effect = CeleryRetry
