@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [2.0.0b2] - 2025-11-12
+
+Please also see 2.0.0b1 for more information about this major update.
+
+### Changed
+
+- Now logs to the extensions log
+- Update dependency to django esi 8 stable
+
+### Fixed
+
+- `esi.retry_task_on_esi_error_and_offline` no longer retries on errors with the old client
+
 ## [2.0.0b1] - 2025-11-11
 
 This release adds support for ESI rate limits and contains breaking changes.

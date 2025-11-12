@@ -1,7 +1,6 @@
 """Helpers for working with ESI."""
 
 import datetime as dt
-import logging
 import random
 import warnings
 from contextlib import contextmanager
@@ -15,6 +14,7 @@ from django.utils.timezone import now
 from esi.clients import EsiClientProvider
 from esi.exceptions import ESIBucketLimitException, ESIErrorLimitException
 
+from allianceauth.services.hooks import get_extension_logger
 from app_utils import __title__, __version__
 from app_utils._app_settings import (
     APPUTILS_ESI_DAILY_DOWNTIME_END,
@@ -22,7 +22,7 @@ from app_utils._app_settings import (
 )
 from app_utils.logging import LoggerAddTag
 
-logger = LoggerAddTag(logging.getLogger(__name__), __title__)
+logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 _esi = EsiClientProvider(ua_appname="allianceauth-app-utils", ua_version=__version__)
 
@@ -235,12 +235,14 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str):
     """Context manager that retries a task when the error error limit has been exceeded
     or when ESI appears to be offline.
 
-    DEPRECATED: This context manager is deprecated and will be removed in future version.
-    Please switch to retry_task_on_esi_issue.
+    Works with django-esi's classic client and the openAPI client.
+
+    DEPRECATED: This context manager is deprecated and will be removed in future versions.
+    Please use `retry_task_on_esi_issue()` instead.
 
     Args:
         task: current celery task
-        info: text describing what is being retried
+        info: text describing what is being retried (for logging)
 
     Example:
 
@@ -250,7 +252,7 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str):
 
         @shared_task(bind=True)
         def my_task(self):
-             with retry_task_on_esi_error_and_offline(self, "my_task"):
+            with retry_task_on_esi_error_and_offline(self, "my_task"):
                 # work that might trigger an HTTPError
 
     '''
@@ -278,6 +280,8 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str):
     except ESIErrorLimitException as exc:
         retry(exc, exc.reset or 60, "ESI error limit exceeded")
     except HTTPError as exc:
+        if exc.status_code == 420:
+            retry(exc, 60, "ESI error limit exceeded")
         if exc.status_code in {
             HTTPStatus.BAD_GATEWAY,
             HTTPStatus.SERVICE_UNAVAILABLE,
@@ -289,7 +293,9 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str):
 @contextmanager
 def retry_task_on_esi_issue(task: Task):
     """Retries task when a recoverable ESI issue is encountered
-    in the wrapped code block.
+     in the wrapped code block.
+
+    Only works with the openAPI client from django_esi.
 
     Retries on:
         * Error limit is exceeded
