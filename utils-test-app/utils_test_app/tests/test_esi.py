@@ -277,6 +277,7 @@ class TestRetryTaskOnEsiErrorAndOffline(NoSocketsTestCase):
 
         for tc in cases:
             task = Mock(spec=Task)
+            task.name = "task_name"
             task.request.retries = 1
             task.retry.side_effect = CeleryRetry
             with self.assertRaises(CeleryRetry):
@@ -287,6 +288,7 @@ class TestRetryTaskOnEsiErrorAndOffline(NoSocketsTestCase):
 
     def test_should_reraise_other_http_errors(self):
         task = Mock(spec=Task)
+        task.name = "task_name"
         task.request.retries = 1
         task.retry.side_effect = CeleryRetry
 

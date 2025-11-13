@@ -230,13 +230,13 @@ def retry_task_if_esi_is_down(task: Task):
 
 
 @contextmanager
-def retry_task_on_esi_error_and_offline(task: Task, info: str):
+def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
     """Context manager that retries a task when the error or rate limit has been exceeded
     or when ESI appears to be offline.
 
     Args:
     - task: current celery task
-    - info: text describing what is being retried
+    - info: custom context for log messages (or the task's name if not specified)
 
     Example:
 
@@ -246,8 +246,8 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str):
 
         @shared_task(bind=True)
         def my_task(self):
-             with retry_task_on_esi_error_and_offline(self, "my_task"):
-                # work that might trigger an HTTPError
+             with retry_task_on_esi_error_and_offline(self):
+                # code that makes a request to ESI with django-esi
 
     '''
     """
@@ -257,7 +257,7 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str):
         countdown = retry_after + backoff_jitter
         logger.warning(
             "%s: %s. Trying again in %s seconds",
-            info,
+            info or task.name or "?",
             issue,
             countdown,
         )
