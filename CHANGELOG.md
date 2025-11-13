@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-## [1.28.0a1] - TBD
+## [1.28.0] - 2025-11-13
 
 ### Added
 
@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - `esi.retry_task_on_esi_error_and_offline`: Will now also retry when the rate limit is exceeded
+- `esi_testing.build_http_error` now also accepts headers.
 
 ## [1.27.0] - 2025-10-12
 

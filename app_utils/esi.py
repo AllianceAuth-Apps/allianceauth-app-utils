@@ -231,12 +231,19 @@ def retry_task_if_esi_is_down(task: Task):
 
 @contextmanager
 def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
-    """Context manager that retries a task when the error or rate limit has been exceeded
-    or when ESI appears to be offline.
+    """Retries the current task when a recoverable ESI issue is encountered
+    in the wrapped code block.
+
+    Only works with the classic Swagger client from django-esi.
+
+    Retries on:
+        * Error limit is exceeded
+        * Rate limit is exceeded for the current rate limit group
+        * Temporary outage (HTTP status codes 502 or 503)
 
     Args:
-    - task: current celery task
-    - info: custom context for log messages (or the task's name if not specified)
+        task: current celery task
+        info: custom context for log messages (or leave blank to get the task's name)
 
     Example:
 
