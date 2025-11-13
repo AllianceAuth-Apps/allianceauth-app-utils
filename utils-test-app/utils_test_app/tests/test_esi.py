@@ -1,4 +1,5 @@
 import datetime as dt
+from http import HTTPStatus
 from unittest.mock import Mock, patch
 
 from bravado.exception import HTTPError
@@ -250,35 +251,24 @@ class TestRetryTaskIfEsiIsDown(NoSocketsTestCase):
         self.assertTrue(kwargs["countdown"])
 
 
-class TestRetryTaskOnEsiErrorExceededAndOffline(NoSocketsTestCase):
+class TestRetryTaskOnEsiErrorAndOffline(NoSocketsTestCase):
     def test_should_complete_normally_when_no_issue(self):
         task = Mock(spec=Task)
         with retry_task_on_esi_error_and_offline(task, "dummy"):
             pass
 
-    def test_should_retry_when_esi_is_offline_1(self):
-        task = Mock(spec=Task)
-        task.request.retries = 1
-        task.retry.side_effect = CeleryRetry
-        with self.assertRaises(CeleryRetry):
-            with retry_task_on_esi_error_and_offline(task, "dummy"):
-                raise build_http_error(502)
-
-    def test_should_retry_when_esi_is_offline_2(self):
-        task = Mock(spec=Task)
-        task.request.retries = 1
-        task.retry.side_effect = CeleryRetry
-        with self.assertRaises(CeleryRetry):
-            with retry_task_on_esi_error_and_offline(task, "dummy"):
-                raise build_http_error(503)
-
-    def test_should_retry_when_error_limit_exceeded(self):
-        task = Mock(spec=Task)
-        task.request.retries = 1
-        task.retry.side_effect = CeleryRetry
-        with self.assertRaises(CeleryRetry):
-            with retry_task_on_esi_error_and_offline(task, "dummy"):
-                raise build_http_error(420)
+    def test_should_retry_one_specific_errors(self):
+        for status_code in [
+            HTTPStatus.BAD_GATEWAY,
+            HTTPStatus.SERVICE_UNAVAILABLE,
+            420,
+        ]:
+            task = Mock(spec=Task)
+            task.request.retries = 1
+            task.retry.side_effect = CeleryRetry
+            with self.assertRaises(CeleryRetry):
+                with retry_task_on_esi_error_and_offline(task, "dummy"):
+                    raise build_http_error(status_code)
 
     def test_should_reraise_other_http_errors(self):
         task = Mock(spec=Task)

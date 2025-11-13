@@ -4,6 +4,7 @@ import datetime as dt
 import random
 import warnings
 from contextlib import contextmanager
+from http import HTTPStatus
 from typing import Optional
 
 from bravado.exception import HTTPError
@@ -250,26 +251,32 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str):
 
     '''
     """
+
+    def retry(exc: Exception, retry_after: float, issue: str):
+        backoff_jitter = int(random.uniform(2, 4) ** task.request.retries)
+        countdown = retry_after + backoff_jitter
+        logger.warning(
+            "%s: %s. Trying again in %s seconds",
+            info,
+            issue,
+            countdown,
+        )
+        raise task.retry(countdown=countdown, exc=exc)
+
+    warnings.warn(
+        "retry_task_on_esi_error_and_offline() is deprecated "
+        "and will be removed in future versions.",
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
     try:
         yield
-    except HTTPError as ex:
-        backoff_jitter = int(random.uniform(2, 4) ** task.request.retries)
-        if ex.status_code == 420:  # ESI error limit exceeded
-            countdown = 60 + backoff_jitter
-            logger.warning(
-                "%s: ESI error limit exceeded. Trying again in %s seconds",
-                info,
-                countdown,
-            )
-            raise task.retry(countdown=countdown) from ex
-
-        if ex.status_code in {502, 503}:  # ESI offline
-            countdown = (15 + backoff_jitter) * 60
-            logger.warning(
-                "%s: ESI appears to be offline. Trying again in %d seconds",
-                info,
-                countdown,
-            )
-            raise task.retry(countdown=countdown) from ex
-
-        raise ex
+    except HTTPError as exc:
+        if exc.status_code == 420:
+            retry(exc, 60, "ESI error limit exceeded")
+        if exc.status_code in {
+            HTTPStatus.BAD_GATEWAY,
+            HTTPStatus.SERVICE_UNAVAILABLE,
+        }:
+            retry(exc, 60, "ESI appears to be offline")
+        raise exc
