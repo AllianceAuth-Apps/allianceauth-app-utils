@@ -268,6 +268,11 @@ class TestRetryTaskOnEsiErrorAndOffline(NoSocketsTestCase):
             Case(HTTPStatus.BAD_GATEWAY, 60),
             Case(HTTPStatus.SERVICE_UNAVAILABLE, 60),
             Case(420, 42, {"X-ESI-Error-Limit-Reset": 42}),
+            Case(
+                HTTPStatus.TOO_MANY_REQUESTS,
+                850,
+                {"Retry-After": 850, "X-Ratelimit-Group": "alpha"},
+            ),
         ]
 
         for tc in cases:

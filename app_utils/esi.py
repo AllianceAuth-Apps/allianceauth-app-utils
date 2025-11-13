@@ -231,7 +231,7 @@ def retry_task_if_esi_is_down(task: Task):
 
 @contextmanager
 def retry_task_on_esi_error_and_offline(task: Task, info: str):
-    """Context manager that retries a task when the error error limit has been exceeded
+    """Context manager that retries a task when the error or rate limit has been exceeded
     or when ESI appears to be offline.
 
     Args:
@@ -276,15 +276,26 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str):
             headers = exc.response.headers
         except AttributeError:
             headers = {}
+
         if exc.status_code == 420:
             try:
-                retry_after = int(headers.get("X-ESI-Error-Limit-Reset", 60))
-            except ValueError:
+                retry_after = int(headers["X-ESI-Error-Limit-Reset"])
+            except (KeyError, ValueError):
                 retry_after = 60
             retry(exc, retry_after, "ESI error limit exceeded")
+
+        if exc.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+            try:
+                retry_after = int(headers["Retry-After"])
+            except (KeyError, ValueError):
+                retry_after = 60 * 15
+            group = headers.get("X-Ratelimit-Group", "?")
+            retry(exc, retry_after, f"ESI rate limit exceeded for group {group}")
+
         if exc.status_code in {
             HTTPStatus.BAD_GATEWAY,
             HTTPStatus.SERVICE_UNAVAILABLE,
         }:
             retry(exc, 60, "ESI appears to be offline")
+
         raise exc
