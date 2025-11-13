@@ -79,7 +79,9 @@ class BravadoOperationStub:
         return self.result(**kwargs)
 
 
-def build_http_error(http_code: int, text: Optional[str] = None) -> HTTPError:
+def build_http_error(
+    http_code: int, text: Optional[str] = None, headers: dict = None
+) -> HTTPError:
     """Build a HTTP exception for django-esi from given http code."""
     exc_map = {
         400: HTTPBadRequest,
@@ -99,7 +101,11 @@ def build_http_error(http_code: int, text: Optional[str] = None) -> HTTPError:
         raise NotImplementedError(f"Unknown http code: {http_code}") from None
     if not text:
         text = "Test exception"
-    return http_exc(response=BravadoResponseStub(http_code, text))
+    return http_exc(
+        response=BravadoResponseStub(
+            status_code=http_code, reason=text, headers=headers
+        )
+    )
 
 
 @dataclass

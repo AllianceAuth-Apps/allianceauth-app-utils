@@ -272,8 +272,16 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str):
     try:
         yield
     except HTTPError as exc:
+        try:
+            headers = exc.response.headers
+        except AttributeError:
+            headers = {}
         if exc.status_code == 420:
-            retry(exc, 60, "ESI error limit exceeded")
+            try:
+                retry_after = int(headers.get("X-ESI-Error-Limit-Reset", 60))
+            except ValueError:
+                retry_after = 60
+            retry(exc, retry_after, "ESI error limit exceeded")
         if exc.status_code in {
             HTTPStatus.BAD_GATEWAY,
             HTTPStatus.SERVICE_UNAVAILABLE,
