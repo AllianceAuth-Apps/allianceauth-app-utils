@@ -12,7 +12,6 @@ from celery import Task
 
 from django.utils.timezone import now
 from esi.clients import EsiClientProvider
-from esi.exceptions import ESIBucketLimitException, ESIErrorLimitException
 
 from allianceauth.services.hooks import get_extension_logger
 from app_utils import __title__, __version__
@@ -231,18 +230,20 @@ def retry_task_if_esi_is_down(task: Task):
 
 
 @contextmanager
-def retry_task_on_esi_error_and_offline(task: Task, info: str):
-    """Context manager that retries a task when the error error limit has been exceeded
-    or when ESI appears to be offline.
+def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
+    """Retries the current task when a recoverable ESI issue is encountered
+    in the wrapped code block.
 
-    Works with django-esi's classic client and the openAPI client.
+    Only works with the classic Swagger client from django-esi.
 
-    DEPRECATED: This context manager is deprecated and will be removed in future versions.
-    Please use `retry_task_on_esi_issue()` instead.
+    Retries on:
+        * Error limit is exceeded
+        * Rate limit is exceeded for the current rate limit group
+        * Temporary outage (HTTP status codes 502 or 503)
 
     Args:
         task: current celery task
-        info: text describing what is being retried (for logging)
+        info: custom context for log messages (or leave blank to get the task's name)
 
     Example:
 
@@ -252,8 +253,8 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str):
 
         @shared_task(bind=True)
         def my_task(self):
-            with retry_task_on_esi_error_and_offline(self, "my_task"):
-                # work that might trigger an HTTPError
+             with retry_task_on_esi_error_and_offline(self):
+                # code that makes a request to ESI with django-esi
 
     '''
     """
@@ -263,7 +264,7 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str):
         countdown = retry_after + backoff_jitter
         logger.warning(
             "%s: %s. Trying again in %s seconds",
-            info,
+            info or task.name or "?",
             issue,
             countdown,
         )
@@ -277,78 +278,31 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str):
     )
     try:
         yield
-    except ESIErrorLimitException as exc:
-        retry(exc, exc.reset or 60, "ESI error limit exceeded")
     except HTTPError as exc:
+        try:
+            headers = exc.response.headers
+        except AttributeError:
+            headers = {}
+
         if exc.status_code == 420:
-            retry(exc, 60, "ESI error limit exceeded")
+            try:
+                retry_after = int(headers["X-ESI-Error-Limit-Reset"])
+            except (KeyError, ValueError):
+                retry_after = 60
+            retry(exc, retry_after, "ESI error limit exceeded")
+
+        if exc.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+            try:
+                retry_after = int(headers["Retry-After"])
+            except (KeyError, ValueError):
+                retry_after = 60 * 15
+            group = headers.get("X-Ratelimit-Group", "?")
+            retry(exc, retry_after, f"ESI rate limit exceeded for group {group}")
+
         if exc.status_code in {
             HTTPStatus.BAD_GATEWAY,
             HTTPStatus.SERVICE_UNAVAILABLE,
         }:
             retry(exc, 60, "ESI appears to be offline")
-        raise exc
 
-
-@contextmanager
-def retry_task_on_esi_issue(task: Task):
-    """Retries task when a recoverable ESI issue is encountered
-     in the wrapped code block.
-
-    Only works with the openAPI client from django_esi.
-
-    Retries on:
-        * Error limit is exceeded
-        * Rate limit is exceeded for the current rate limit group
-        * Temporary outage (HTTP 502, 503)
-
-    Args:
-        task: current celery task
-
-    Example:
-
-    .. code-block:: python
-
-        from app_utils.esi import retry_task_on_esi_error_and_offline
-
-        @shared_task(bind=True)
-        def my_task(self):
-            ...
-            with retry_task_on_esi_error_and_offline(self):
-                # Code that makes ESI requests via django-esi
-
-    '''
-    """
-
-    def retry(exc: Exception, retry_after: float, issue: str):
-        backoff_jitter = int(random.uniform(2, 4) ** task.request.retries)
-        countdown = retry_after + backoff_jitter
-        logger.warning(
-            "%s: %s. Trying again in %s seconds",
-            task.name,
-            issue,
-            countdown,
-        )
-        raise task.retry(countdown=countdown, exc=exc)
-
-    try:
-        yield
-    except ESIErrorLimitException as exc:
-        retry(exc, exc.reset or 60, "ESI error limit exceeded")
-    except ESIBucketLimitException as exc:
-        try:
-            retry_after = exc.reset or exc.bucket.window
-        except AttributeError:
-            retry_after = 900
-        try:
-            slug = exc.bucket.slug
-        except AttributeError:
-            slug = "?"
-        retry(exc, retry_after, f"ESI rate limit exceeded for {slug}")
-    except HTTPError as exc:
-        if exc.status_code in {
-            HTTPStatus.BAD_GATEWAY,
-            HTTPStatus.SERVICE_UNAVAILABLE,
-        }:
-            retry(exc, 60, "ESI appears to be offline")
         raise exc
