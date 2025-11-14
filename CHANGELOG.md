@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.29.0] - 2025-11-14
+
+### Changed
+
+- `esi.retry_task_on_esi_error_and_offline`: Will now auto-retry when the ESI error limit timeout is still active
+- `testing.CacheFake`: Added ttl() method
+
 ## [1.28.0] - 2025-11-13
 
 ### Added

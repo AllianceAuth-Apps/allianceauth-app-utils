@@ -17,7 +17,7 @@ from app_utils.esi import (
     retry_task_on_esi_error_and_offline,
 )
 from app_utils.esi_testing import EsiClientStub, EsiEndpoint, build_http_error
-from app_utils.testing import NoSocketsTestCase
+from app_utils.testing import CacheFake, NoSocketsTestCase
 
 MODULE_PATH = "app_utils.esi"
 
@@ -255,36 +255,43 @@ class TestRetryTaskIfEsiIsDown(NoSocketsTestCase):
 class TestRetryTaskOnEsiErrorAndOffline(NoSocketsTestCase):
     def test_should_complete_normally_when_no_issue(self):
         task = Mock(spec=Task)
-        with retry_task_on_esi_error_and_offline(task, "dummy"):
-            pass
+        with patch(MODULE_PATH + ".cache", new_callable=CacheFake):
+            with retry_task_on_esi_error_and_offline(task):
+                pass
 
     def test_should_retry_one_specific_errors(self):
         class Case(NamedTuple):
+            name: str
             status_code: int
             countdown: int
             headers: dict = None
 
         cases = [
-            Case(HTTPStatus.BAD_GATEWAY, 60),
-            Case(HTTPStatus.SERVICE_UNAVAILABLE, 60),
-            Case(420, 42, {"X-ESI-Error-Limit-Reset": 42}),
+            Case("offline1", HTTPStatus.BAD_GATEWAY, 60),
+            Case("offline2", HTTPStatus.SERVICE_UNAVAILABLE, 60),
+            Case("error limit with header", 420, 42, {"X-ESI-Error-Limit-Reset": 42}),
+            Case("error limit without header", 420, 60),
             Case(
+                "rate limit with header",
                 HTTPStatus.TOO_MANY_REQUESTS,
                 850,
                 {"Retry-After": 850, "X-Ratelimit-Group": "alpha"},
             ),
+            Case("rate limit without header", HTTPStatus.TOO_MANY_REQUESTS, 900),
         ]
 
         for tc in cases:
-            task = Mock(spec=Task)
-            task.name = "task_name"
-            task.request.retries = 1
-            task.retry.side_effect = CeleryRetry
-            with self.assertRaises(CeleryRetry):
-                with retry_task_on_esi_error_and_offline(task, "dummy"):
-                    raise build_http_error(tc.status_code, headers=tc.headers)
-            countdown = task.retry.call_args[1]["countdown"]
-            self.assertGreaterEqual(countdown, tc.countdown)
+            with self.subTest(name=tc.name):
+                task = Mock(spec=Task)
+                task.name = "task_name"
+                task.request.retries = 1
+                task.retry.side_effect = CeleryRetry
+                with patch(MODULE_PATH + ".cache", new_callable=CacheFake):
+                    with self.assertRaises(CeleryRetry):
+                        with retry_task_on_esi_error_and_offline(task):
+                            raise build_http_error(tc.status_code, headers=tc.headers)
+                countdown = task.retry.call_args[1]["countdown"]
+                self.assertGreaterEqual(countdown, tc.countdown)
 
     def test_should_reraise_other_http_errors(self):
         task = Mock(spec=Task)
@@ -292,6 +299,24 @@ class TestRetryTaskOnEsiErrorAndOffline(NoSocketsTestCase):
         task.request.retries = 1
         task.retry.side_effect = CeleryRetry
 
-        with self.assertRaises(HTTPError):
-            with retry_task_on_esi_error_and_offline(task):
-                raise build_http_error(400)
+        with patch(MODULE_PATH + ".cache", new_callable=CacheFake):
+            with self.assertRaises(HTTPError):
+                with retry_task_on_esi_error_and_offline(task):
+                    raise build_http_error(400)
+
+    def test_should_retry_when_error_limit_not_yet_elapsed(self):
+        task = Mock(spec=Task)
+        task.name = "task_name"
+        task.request.retries = 1
+        task.retry.side_effect = CeleryRetry
+
+        with patch(MODULE_PATH + ".cache", new_callable=CacheFake):
+            # retry when 420 was raised
+            with self.assertRaises(CeleryRetry):
+                with retry_task_on_esi_error_and_offline(task):
+                    raise build_http_error(420)
+
+            # retry again when 420 timeout still active
+            with self.assertRaises(CeleryRetry):
+                with retry_task_on_esi_error_and_offline(task):
+                    pass
