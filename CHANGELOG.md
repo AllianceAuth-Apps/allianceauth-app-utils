@@ -7,40 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-## [2.0.0b2] - 2025-11-12
-
-Please also see 2.0.0b1 for more information about this major update.
-
-### Changed
-
-- Now logs to the extensions log
-- Update dependency to django esi 8 stable
-
-### Fixed
-
-- `esi.retry_task_on_esi_error_and_offline` no longer retries on errors with the old client
-
-## [2.0.0b1] - 2025-11-11
-
-This release adds support for ESI rate limits and contains breaking changes.
-
-New minimum requirements are:
-
-- django-esi 8
-- Alliance Auth 4
-- Python 3.10 (inherited from django-esi 8)
+## [1.28.0] - 2025-11-13
 
 ### Added
 
 - `testing.CacheFake`: A fake for replacing Django's cache in tests
 - `testing.reset_celery_once_locks`: Function for deleting celery once locks
-- `esi.retry_task_on_esi_issue`: replaces `esi.retry_task_on_esi_error_and_offline` and adds support for rate limit errors
 
 ### Changed
 
-- BREAKING CHANGE: Drops support for Python 3.8, 3.9
-- Adds support for Python 3.12, 3.13
-- `esi.retry_task_on_esi_error_and_offline`: marked as deprecated
+- `esi.retry_task_on_esi_error_and_offline`: Will now also retry when the rate limit is exceeded
+- `esi_testing.build_http_error` now also accepts headers.
 
 ## [1.27.0] - 2025-10-12
 
