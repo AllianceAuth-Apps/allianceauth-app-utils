@@ -158,8 +158,19 @@ class TestCacheFake(TestCase):
         cache.clear()
         self.assertIsNone(cache.get("alpha"))
 
-    def test_set_with_timeout(self):
+    def test_ttl_should_return_timeout_when_key_exists(self):
         cache = CacheFake()
         cache.set("alpha", "django", timeout=5)
-        got = cache.get("alpha")
-        self.assertEqual(got, "django")
+        got = cache.ttl("alpha")
+        self.assertEqual(got, 5)
+
+    def test_ttl_should_return_none_when_key_does_not_exit(self):
+        cache = CacheFake()
+        got = cache.ttl("alpha")
+        self.assertIsNone(got)
+
+    def test_should_have_default_timeout(self):
+        cache = CacheFake()
+        cache.set("alpha", "django")
+        got = cache.ttl("alpha")
+        self.assertGreater(got, 0)

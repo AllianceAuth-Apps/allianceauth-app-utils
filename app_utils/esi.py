@@ -10,6 +10,7 @@ from typing import Optional
 from bravado.exception import HTTPError
 from celery import Task
 
+from django.core.cache import cache
 from django.utils.timezone import now
 from esi.clients import EsiClientProvider
 
@@ -231,8 +232,9 @@ def retry_task_if_esi_is_down(task: Task):
 
 @contextmanager
 def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
-    """Retries the current task when a recoverable ESI issue is encountered
-    in the wrapped code block.
+    """Return a context manager that retries the current task
+    when a recoverable ESI issue is encountered in the wrapped code block.
+    And retry when the ESI error limit timeout is still active.
 
     Only works with the classic Swagger client from django-esi.
 
@@ -259,7 +261,7 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
     '''
     """
 
-    def retry(exc: Exception, retry_after: float, issue: str):
+    def retry(retry_after: float, issue: str, exc: Exception = None):
         backoff_jitter = int(random.uniform(2, 4) ** task.request.retries)
         countdown = retry_after + backoff_jitter
         logger.warning(
@@ -270,12 +272,11 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
         )
         raise task.retry(countdown=countdown, exc=exc)
 
-    warnings.warn(
-        "retry_task_on_esi_error_and_offline() is deprecated "
-        "and will be removed in future versions.",
-        category=DeprecationWarning,
-        stacklevel=2,
-    )
+    ERROR_LIMIT_KEY = "app-utils-error-limit-due"
+    error_limit_ttl = cache.ttl(ERROR_LIMIT_KEY)
+    if error_limit_ttl:
+        retry(error_limit_ttl, "ESI error limit exceeded")
+
     try:
         yield
     except HTTPError as exc:
@@ -289,7 +290,8 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
                 retry_after = int(headers["X-ESI-Error-Limit-Reset"])
             except (KeyError, ValueError):
                 retry_after = 60
-            retry(exc, retry_after, "ESI error limit exceeded")
+            cache.set(ERROR_LIMIT_KEY, "active", retry_after)
+            retry(retry_after, "ESI error limit exceeded", exc)
 
         if exc.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             try:
@@ -297,12 +299,12 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
             except (KeyError, ValueError):
                 retry_after = 60 * 15
             group = headers.get("X-Ratelimit-Group", "?")
-            retry(exc, retry_after, f"ESI rate limit exceeded for group {group}")
+            retry(retry_after, f"ESI rate limit exceeded for group {group}", exc)
 
         if exc.status_code in {
             HTTPStatus.BAD_GATEWAY,
             HTTPStatus.SERVICE_UNAVAILABLE,
         }:
-            retry(exc, 60, "ESI appears to be offline")
+            retry(60 * 5, "ESI appears to be offline", exc)
 
         raise exc

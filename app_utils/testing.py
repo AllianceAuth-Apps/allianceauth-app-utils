@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import socket
+from dataclasses import dataclass
 from itertools import count
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -452,7 +453,7 @@ class CacheFake:
 
     .. code-block:: python
 
-        from app_utils.esi import CacheFake
+        from app_utils.testing import CacheFake
 
         @patch("my_module.cache", new_callable=CacheFake)
         def test_my_function(self):
@@ -460,8 +461,15 @@ class CacheFake:
 
     """
 
+    DEFAULT_TIMEOUT = 3600
+
+    @dataclass
+    class Entry:
+        value: Any
+        timeout: float
+
     def __init__(self):
-        self._cache: Dict[str, Any] = {}
+        self._cache: Dict[str, CacheFake.Entry] = {}
 
     def clear(self) -> None:
         self._cache.clear()
@@ -474,11 +482,21 @@ class CacheFake:
 
     def get(self, key: str, default: Any = None, version: int = None) -> Any:
         try:
-            return self._cache[key]
+            x = self._cache[key]
         except KeyError:
             return default
+        return x.value
 
     def set(
         self, key: str, value: Any, timeout: int = None, version: int = None
     ) -> None:
-        self._cache[key] = value
+        if not timeout:
+            timeout = CacheFake.DEFAULT_TIMEOUT
+        self._cache[key] = CacheFake.Entry(value=value, timeout=timeout)
+
+    def ttl(self, key: str) -> Optional[float]:
+        try:
+            x = self._cache[key]
+        except KeyError:
+            return None
+        return x.timeout
