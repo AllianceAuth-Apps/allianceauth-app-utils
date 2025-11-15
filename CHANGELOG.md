@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.29.1] - 2025-11-15
+
+### Fixed
+
+- Settings import no longer works for sphinx docs
+
 ## [1.29.0] - 2025-11-14
 
 ### Changed
