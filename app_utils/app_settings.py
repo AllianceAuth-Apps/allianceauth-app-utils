@@ -1,14 +1,11 @@
 """Django settings related utilities."""
 
+import logging
 from typing import Any, Optional
 
 from django.conf import settings
 
-from allianceauth.services.hooks import get_extension_logger
-from app_utils import __title__
-from app_utils.logging import LoggerAddTag
-
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = logging.getLogger(__name__)
 
 
 def clean_setting(
