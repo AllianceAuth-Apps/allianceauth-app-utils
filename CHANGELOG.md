@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.30.0] - 2025-11-16
+
+### Added
+
+- `esi.reset_retry_task_on_esi_error_and_offline`: Resets state of `retry_task_on_esi_error_and_offline()` for tests
+
+### Changed
+
+- `esi.retry_task_on_esi_error_and_offline`: Will now also auto-retry during daily downtime
+
 ## [1.29.1] - 2025-11-15
 
 ### Fixed
