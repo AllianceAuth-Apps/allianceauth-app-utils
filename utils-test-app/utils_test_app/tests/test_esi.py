@@ -132,7 +132,7 @@ class TestFetchEsiStatus(NoSocketsTestCase):
             endpoints=[EsiEndpoint("Status", "get_status")],
         )
         # when
-        my_now = dt.datetime(2021, 6, 29, 10, 0)
+        my_now = dt.datetime(2025, 6, 30, 10, 0)
         with patch(MODULE_PATH + ".now") as mock_now:
             mock_now.return_value = my_now
             status = fetch_esi_status()
@@ -167,7 +167,7 @@ class TestFetchEsiStatus(NoSocketsTestCase):
         # when
         with patch(MODULE_PATH + ".now") as mock_now:
             mock_now.return_value = dt.datetime(
-                2021, 6, 29, 11, 1, tzinfo=dt.timezone.utc
+                2025, 6, 30, 11, 1, tzinfo=dt.timezone.utc
             )
             status = fetch_esi_status()
         # then
@@ -191,7 +191,7 @@ class TestFetchEsiStatus(NoSocketsTestCase):
             endpoints=[EsiEndpoint("Status", "get_status")],
         )
         # when
-        my_now = dt.datetime(2021, 6, 29, 11, 1)
+        my_now = dt.datetime(2025, 6, 30, 11, 1)
         with patch(MODULE_PATH + ".now") as mock_now:
             mock_now.return_value = my_now
             status = fetch_esi_status(ignore_daily_downtime=True)
@@ -255,7 +255,11 @@ class TestRetryTaskIfEsiIsDown(NoSocketsTestCase):
 class TestRetryTaskOnEsiErrorAndOffline(NoSocketsTestCase):
     def test_should_complete_normally_when_no_issue(self):
         task = Mock(spec=Task)
-        with patch(MODULE_PATH + ".cache", new_callable=CacheFake):
+        my_now = dt.datetime(2025, 6, 30, 10, 0)
+        with patch(MODULE_PATH + ".cache", new_callable=CacheFake), patch(
+            MODULE_PATH + ".now"
+        ) as mock_now:
+            mock_now.return_value = my_now
             with retry_task_on_esi_error_and_offline(task):
                 pass
 
@@ -286,7 +290,12 @@ class TestRetryTaskOnEsiErrorAndOffline(NoSocketsTestCase):
                 task.name = "task_name"
                 task.request.retries = 1
                 task.retry.side_effect = CeleryRetry
-                with patch(MODULE_PATH + ".cache", new_callable=CacheFake):
+                my_now = dt.datetime(2025, 6, 30, 10, 0)
+
+                with patch(MODULE_PATH + ".cache", new_callable=CacheFake), patch(
+                    MODULE_PATH + ".now"
+                ) as mock_now:
+                    mock_now.return_value = my_now
                     with self.assertRaises(CeleryRetry):
                         with retry_task_on_esi_error_and_offline(task):
                             raise build_http_error(tc.status_code, headers=tc.headers)
@@ -298,8 +307,12 @@ class TestRetryTaskOnEsiErrorAndOffline(NoSocketsTestCase):
         task.name = "task_name"
         task.request.retries = 1
         task.retry.side_effect = CeleryRetry
+        my_now = dt.datetime(2025, 6, 30, 10, 0)
 
-        with patch(MODULE_PATH + ".cache", new_callable=CacheFake):
+        with patch(MODULE_PATH + ".cache", new_callable=CacheFake), patch(
+            MODULE_PATH + ".now"
+        ) as mock_now:
+            mock_now.return_value = my_now
             with self.assertRaises(HTTPError):
                 with retry_task_on_esi_error_and_offline(task):
                     raise build_http_error(400)
@@ -309,14 +322,33 @@ class TestRetryTaskOnEsiErrorAndOffline(NoSocketsTestCase):
         task.name = "task_name"
         task.request.retries = 1
         task.retry.side_effect = CeleryRetry
+        my_now = dt.datetime(2025, 6, 30, 10, 0)
 
-        with patch(MODULE_PATH + ".cache", new_callable=CacheFake):
+        with patch(MODULE_PATH + ".cache", new_callable=CacheFake), patch(
+            MODULE_PATH + ".now"
+        ) as mock_now:
+            mock_now.return_value = my_now
             # retry when 420 was raised
             with self.assertRaises(CeleryRetry):
                 with retry_task_on_esi_error_and_offline(task):
                     raise build_http_error(420)
 
             # retry again when 420 timeout still active
+            with self.assertRaises(CeleryRetry):
+                with retry_task_on_esi_error_and_offline(task):
+                    pass
+
+    def test_should_retry_during_daily_downtime(self):
+        task = Mock(spec=Task)
+        task.name = "task_name"
+        task.request.retries = 1
+        task.retry.side_effect = CeleryRetry
+        my_now = dt.datetime(2025, 6, 30, 11, 10)
+
+        with patch(MODULE_PATH + ".cache", new_callable=CacheFake), patch(
+            MODULE_PATH + ".now"
+        ) as mock_now:
+            mock_now.return_value = my_now
             with self.assertRaises(CeleryRetry):
                 with retry_task_on_esi_error_and_offline(task):
                     pass

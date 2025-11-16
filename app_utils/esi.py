@@ -22,8 +22,9 @@ from app_utils._app_settings import (
 )
 from app_utils.logging import LoggerAddTag
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+_ERROR_LIMIT_KEY = "app-utils-error-limit-due"
 
+logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 _esi = EsiClientProvider(ua_appname="allianceauth-app-utils", ua_version=__version__)
 
 
@@ -195,9 +196,20 @@ def fetch_esi_status(ignore_daily_downtime: bool = False) -> EsiStatus:
 
 def _is_daily_downtime() -> bool:
     """Determine if we currently are in the daily downtime period."""
+    return _daily_downtime_reset() is not None
+
+
+def _daily_downtime_reset() -> Optional[float]:
+    """Return when daily downtime resets in seconds
+    or return None when outside daily downtime.
+    """
     downtime_start = _calc_downtime(APPUTILS_ESI_DAILY_DOWNTIME_START)
     downtime_end = _calc_downtime(APPUTILS_ESI_DAILY_DOWNTIME_END)
-    return now() >= downtime_start and now() <= downtime_end
+    is_downtime = now() >= downtime_start and now() <= downtime_end
+    if not is_downtime:
+        return None
+
+    return max(0, (downtime_end - now()).total_seconds())
 
 
 def _calc_downtime(hours_float: float) -> dt.datetime:
@@ -242,6 +254,7 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
         * Error limit is exceeded
         * Rate limit is exceeded for the current rate limit group
         * Temporary outage (HTTP status codes 502 or 503)
+        * During daily downtime
 
     Args:
         task: current celery task
@@ -272,9 +285,10 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
         )
         raise task.retry(countdown=countdown, exc=exc)
 
-    ERROR_LIMIT_KEY = "app-utils-error-limit-due"
-    error_limit_ttl = cache.ttl(ERROR_LIMIT_KEY)
-    if error_limit_ttl:
+    if downtime_reset := _daily_downtime_reset():
+        retry(downtime_reset, "Daily downtime")
+
+    if error_limit_ttl := cache.ttl(_ERROR_LIMIT_KEY):
         retry(error_limit_ttl, "ESI error limit exceeded")
 
     try:
@@ -290,7 +304,7 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
                 retry_after = int(headers["X-ESI-Error-Limit-Reset"])
             except (KeyError, ValueError):
                 retry_after = 60
-            cache.set(ERROR_LIMIT_KEY, "active", retry_after)
+            cache.set(_ERROR_LIMIT_KEY, "active", retry_after)
             retry(retry_after, "ESI error limit exceeded", exc)
 
         if exc.status_code == HTTPStatus.TOO_MANY_REQUESTS:
@@ -308,3 +322,10 @@ def retry_task_on_esi_error_and_offline(task: Task, info: str = ""):
             retry(60 * 5, "ESI appears to be offline", exc)
 
         raise exc
+
+
+def reset_retry_task_on_esi_error_and_offline():
+    """Reset state of retry_task_on_esi_error_and_offline().
+    This function is meant to be used in tests.
+    """
+    cache.delete(_ERROR_LIMIT_KEY)
