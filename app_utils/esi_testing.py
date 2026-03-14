@@ -4,6 +4,7 @@ import inspect
 from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass
+from types import SimpleNamespace  # OpenAPI (added)
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 from bravado.exception import (
@@ -56,7 +57,7 @@ class BravadoOperationStub:
         reason="OK",
     ):
         self._data = data
-        self._headers = headers if headers else {"X-Pages": 1}
+        self._headers = headers if headers else {"X-Pages": 1, "ETag": "test-etag"}
         self._status_code = status_code
         self._reason = reason
         self.request_config = BravadoOperationStub.RequestConfig(also_return_response)
@@ -131,6 +132,7 @@ class EsiEndpoint:
     method: str
     primary_key: Union[str, Tuple[str, str], None] = None
     needs_token: bool = False
+    return_response: bool = False
     data: Union[dict, list, str, None] = None
     http_error_code: Optional[int] = None
     side_effect: Union[Callable, Exception, None] = None
@@ -253,7 +255,8 @@ class _EsiMethod:
                 f"No test data for {self._endpoint.primary_key} = {pk_value}"
             )
             raise build_http_error(404, text) from None
-
+        if self._endpoint.return_response:
+            return BravadoOperationStub(result, also_return_response=True)
         return BravadoOperationStub(result)
 
     @staticmethod
@@ -275,6 +278,38 @@ class _EsiMethod:
             convert_dict(data)
 
         return data
+
+
+class _EsiMethodOpenApi(_EsiMethod):
+    """An ESI method that can be called from the ESI client using OpenAPI client."""
+
+    @staticmethod
+    def _convert_values(data) -> Any:
+        def convert_dict(item):
+            if isinstance(item, dict):
+                for key, value in item.items():
+                    if isinstance(value, str):
+                        try:
+                            if my_datetime := parse_datetime(value):
+                                item[key] = my_datetime.replace(tzinfo=utc)
+                        except ValueError:
+                            pass
+
+        def dict_to_obj(obj):
+            if isinstance(obj, dict):
+                return SimpleNamespace(**{k: dict_to_obj(v) for k, v in obj.items()})
+            elif isinstance(obj, list):
+                return [dict_to_obj(i) for i in obj]
+            else:
+                return obj
+
+        if isinstance(data, list):
+            for row in data:
+                convert_dict(row)
+        else:
+            convert_dict(data)
+
+        return dict_to_obj(data)
 
 
 class EsiClientStub:
@@ -353,3 +388,24 @@ class EsiClientStub:
     def create_from_endpoints(cls, endpoints: List[EsiEndpoint], **kwargs):
         """Create stub from endpoints."""
         return cls(testdata=None, endpoints=endpoints, **kwargs)
+
+
+class EsiClientStubOpenApi(EsiClientStub):
+    """ESI Client Stub that uses OpenAPI generated client."""
+
+    def _add_endpoint(self, endpoint: EsiEndpoint):
+        if not hasattr(self, endpoint.category):
+            setattr(self, endpoint.category, type(endpoint.category, (object,), {}))
+        my_category = getattr(self, endpoint.category)
+        if not hasattr(my_category, endpoint.method):
+            setattr(
+                my_category,
+                endpoint.method,
+                _EsiMethodOpenApi(
+                    endpoint=endpoint,
+                    testdata=self._testdata,
+                    http_error=self._http_error,
+                ).call,
+            )
+        else:
+            raise ValueError(f"Endpoint for {endpoint} already defined!")
