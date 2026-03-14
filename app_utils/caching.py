@@ -68,7 +68,7 @@ class ObjectCacheMixin:
             pk: Primary key for object to fetch
         """
         key_base = self._create_object_base_cache_key(pk)
-        cache.delete_pattern(f"{key_base}*")
+        cache.delete_pattern(f"{key_base}*", itersize=100_000)
 
     def _create_object_base_cache_key(self, pk: int) -> str:
         model_meta = self.model._meta

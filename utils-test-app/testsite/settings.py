@@ -6,6 +6,7 @@ This settings file contains everything needed for Alliance Auth projects to func
 It gets overwritten by the 'allianceauth update' command.
 If you wish to make changes, overload the setting in your project's settings file (local.py).
 """
+
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)

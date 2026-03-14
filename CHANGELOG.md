@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.30.1] - 2026-03-14
+
+### Fixed
+
+- Clearing the object cache (e.g. Character) is slow.
+
 ## [1.30.0] - 2025-11-16
 
 ### Added
