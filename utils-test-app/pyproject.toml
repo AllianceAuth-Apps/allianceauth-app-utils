@@ -11,6 +11,9 @@ requires-python = ">=3.8"
 authors = [{ name = "Erik Kalkoken", email = "kalkoken87@gmail.com" }]
 dependencies = ["requests"]
 
+[project.optional-dependencies]
+test = ["coverage", "factory_boy", "requests_mock"]
+
 [project.urls]
 Homepage = "https://gitlab.com/ErikKalkoken/allianceauth-app-utils"
 

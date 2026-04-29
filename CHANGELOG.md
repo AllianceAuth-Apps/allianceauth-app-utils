@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.31.0a1] - 2026-04-29
+
+### Changed
+
+- Added support for AA5: Note that ESI related features are currently not supported with AA5
+- Dropped support for AA3
+
 ## [1.30.1] - 2026-03-14
 
 ### Fixed
