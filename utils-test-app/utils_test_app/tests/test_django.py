@@ -1,4 +1,4 @@
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group, Permission, User
 from django.test import TestCase
 
 from allianceauth.tests.auth_utils import AuthUtils
@@ -16,7 +16,9 @@ class TestUsersWithPermissionQS(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.permission = AuthUtils.get_permission_by_name("auth.timer_management")
+        cls.permission = Permission.objects.first()
+        if not cls.permission:
+            raise RuntimeError("no permission found")
         cls.group, _ = Group.objects.get_or_create(name="Test Group")
         AuthUtils.add_permissions_to_groups([cls.permission], [cls.group])
         cls.state = AuthUtils.create_state(name="Test State", priority=75)
