@@ -2,7 +2,13 @@ from django.contrib.auth.models import Group, Permission, User
 from django.test import TestCase
 
 from allianceauth.tests.auth_utils import AuthUtils
-from app_utils.django import app_labels, users_with_permission
+from app_utils.django import (
+    add_permissions_to_user_by_name,
+    app_labels,
+    permission_by_name,
+    users_with_permission,
+)
+from app_utils.testdata_factories import UserFactory
 
 
 class TestAppLabel(TestCase):
@@ -77,3 +83,29 @@ class TestUsersWithPermissionQS(TestCase):
         result = self.user_with_permission_pks()
         # then
         self.assertSetEqual(result, {self.user_1.pk, self.user_3.pk})
+
+
+class TestAddPermissionsToUserByName(TestCase):
+    def test_can_add_permission_by_name(self):
+        user = UserFactory()
+        perm_name = "groupmanagement.request_groups"
+        self.assertFalse(user.has_perm(perm_name))
+        user = add_permissions_to_user_by_name(user, [perm_name])
+        self.assertTrue(user.has_perm(perm_name))
+
+
+class TestPermissionByName(TestCase):
+    def test_should_return_permission_when_it_exists(self):
+        got = permission_by_name("groupmanagement.request_groups")
+        want = Permission.objects.get(
+            content_type__app_label="groupmanagement", codename="request_groups"
+        )
+        self.assertEqual(got, want)
+
+    def test_should_raise_exception_when_permission_does_not_exist_1(self):
+        with self.assertRaises(Exception):
+            permission_by_name("groupmanagement.invalid")
+
+    def test_should_raise_exception_when_permission_does_not_exist_2(self):
+        with self.assertRaises(Exception):
+            permission_by_name("auth.request_groups")
