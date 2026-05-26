@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.32.0] - 2026-05-26
+
+### Added
+
+- `django.permission_by_name` returns a permission from a qualified name and replaces the buggy pendant in the AuthUtils.
+
+### Changed
+
+- `allianceauth.notify_admins` and `allianceauth.notify_admins_throttled` now identify "admins" by checking for superusers only and no longer check for users having the `auth.logging_notifications` permission.
+
+### Fixed
+
+- `UserFactory` and `create_user` can fail when multiple permissions exists in an app with the same codename. This was caused by a bug in `allianceauth.tests.AuthUtils.get_permission_by_name()`
+
 ## [1.31.0] - 2026-05-11
 
 ### Changed
