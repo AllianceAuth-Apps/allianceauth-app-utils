@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.32.1] - 2026-05-29
+
+### Fixed
+
+- tesing.create_user() no longer works withouth an alliance, caused by API change in AA5.1
+
 ## [1.32.0] - 2026-05-26
 
 ### Added
