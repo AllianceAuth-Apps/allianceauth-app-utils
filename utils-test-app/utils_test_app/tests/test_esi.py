@@ -1,5 +1,5 @@
 try:
-    from bravado.exception import HTTPError
+    from esi import clients  # noqa: F401
 except ImportError:
     pass  # this tools do not work with the OpenAPI client / AA 5
 
@@ -9,6 +9,7 @@ else:
     from typing import NamedTuple
     from unittest.mock import Mock, patch
 
+    from bravado.exception import HTTPError
     from celery import Task
     from celery.exceptions import Retry as CeleryRetry
 

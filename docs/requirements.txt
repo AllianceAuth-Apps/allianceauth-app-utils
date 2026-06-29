@@ -3,14 +3,15 @@ myst_parser
 sphinxcontrib-django2
 
 # autodoc
-django>=3.2,<5
+django>=5,<6
 django-celery-beat>=2
 django-bootstrap-form
 django-sortedm2m
-django-esi>=8.0.0b2
+django-esi>=8
 celery>=5,<6
 celery_once
 passlib
 redis
 factory_boy
 mysqlclient<2.2
+pytz
