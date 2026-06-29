@@ -1,7 +1,9 @@
 from django.core.cache import cache
 from django.test import TestCase, override_settings
 
-from app_utils.caching import ObjectCacheMixin
+from allianceauth.eveonline.models import EveCharacter
+from app_utils.caching import ObjectCacheMixin, cached_queryset
+from app_utils.testdata_factories import EveCharacterFactory
 
 CURRENT_PATH = "utils_test_app.tests.test_caching"
 fake_objects = dict()
@@ -133,3 +135,19 @@ class TestObjectCacheMixin2(TestCase):
 
         # then
         self.assertEqual(new_obj.name, "Changed object")
+
+
+class TestCachedQueryset(TestCase):
+    def test_should_cache_queryset(self):
+        # given
+        cache.clear()
+        character = EveCharacterFactory()
+        key = "my-key"
+        qs = cached_queryset(EveCharacter.objects.all(), key=key, timeout=120)
+        self.assertCountEqual(qs, [character])
+        EveCharacterFactory()
+
+        # when/then
+        # ensure qs still returns the cached result
+        # which would not include the additional character.
+        self.assertCountEqual(qs, [character])
