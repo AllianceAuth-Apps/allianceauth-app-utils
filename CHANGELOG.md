@@ -7,11 +7,26 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.33.0] - 2026-06-29
+
+### Added
+
+- StateFactory
+
+### Changed
+
+- DEPRECATED: testing.create_user()
+- Added and improved doc strings for test factories
+
+### Fixed
+
+- testing.create_user() does not directly set permissions
+
 ## [1.32.1] - 2026-05-29
 
 ### Fixed
 
-- tesing.create_user() no longer works withouth an alliance, caused by API change in AA5.1
+- testing.create_user() no longer works without an alliance, caused by API change in AA5.1
 
 ## [1.32.0] - 2026-05-26
 
