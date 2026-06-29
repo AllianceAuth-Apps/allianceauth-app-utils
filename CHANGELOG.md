@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
-- StateFactory
+- New test factories: GroupFactory, StateFactoryE
 
 ### Changed
 

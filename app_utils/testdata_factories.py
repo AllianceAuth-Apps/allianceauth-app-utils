@@ -9,6 +9,7 @@ import factory
 import factory.fuzzy
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.db.models import Max
 
 from allianceauth.authentication.models import State
@@ -17,6 +18,7 @@ from allianceauth.eveonline.models import (
     EveCharacter,
     EveCorporationInfo,
 )
+from allianceauth.groupmanagement.models import AuthGroup
 
 from .django import add_permissions_to_user_by_name, permission_by_name
 from .testing import add_character_to_user
@@ -26,6 +28,8 @@ User = get_user_model()
 
 
 class BaseMetaFactory(Generic[T], factory.base.FactoryMetaClass):
+    """:meta private:"""
+
     def __call__(cls, *args, **kwargs) -> T:
         return super().__call__(*args, **kwargs)
 
@@ -134,6 +138,34 @@ class EveCharacterFactory(
             if self.corporation.alliance
             else ""
         )
+
+
+class GroupFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[Group]):
+    """Generate a Group for AllianceAuth.
+
+    The authgroup can optionally be configured by providing parameters to `authgroup`.
+    For example: `GroupFactory(authgroup__public=True)`
+    """
+
+    class Meta:
+        model = Group
+
+    name = factory.Sequence(lambda n: f"Group #{n + 1}")
+
+    @factory.post_generation
+    def authgroup(self, create, extracted, **kwargs):
+        authgroup: AuthGroup = self.authgroup
+
+        if kwargs:
+            for field in ["states", "group_leaders", "group_leader_groups"]:
+                if field in kwargs:
+                    x = kwargs.pop(field)
+                    getattr(self.authgroup, field).add(*x)
+
+            for field, value in kwargs.items():
+                setattr(authgroup, field, value)
+
+        authgroup.save()
 
 
 class StateFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[State]):

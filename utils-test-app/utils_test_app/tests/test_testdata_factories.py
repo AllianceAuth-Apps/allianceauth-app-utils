@@ -3,6 +3,7 @@ from app_utils.testdata_factories import (
     EveAllianceInfoFactory,
     EveCharacterFactory,
     EveCorporationInfoFactory,
+    GroupFactory,
     StateFactory,
     UserFactory,
     UserMainFactory,
@@ -32,6 +33,17 @@ class TestEveInfoFactory(NoSocketsTestCase):
             corporation=EveCorporationInfoFactory(create_alliance=False)
         )
         self.assertIsNone(character.alliance_id)
+
+
+class TestGroupFactory(NoSocketsTestCase):
+    def test_can_set_public(self):
+        g = GroupFactory(authgroup__public=True)
+        self.assertTrue(g.authgroup.public)
+
+    def test_can_set_states(self):
+        s = StateFactory()
+        g = GroupFactory(authgroup__states=[s])
+        self.assertIn(s, g.authgroup.states.all())
 
 
 class TestStateFactory(NoSocketsTestCase):
