@@ -68,7 +68,7 @@ class TestUsersWithPermission(TestCase):
     def test_should_include_users_inheriting_permission_from_a_group(self):
         # given
         group = GroupFactory()
-        group.permissions.add(self.perm)
+        group.permissions.add(self.perm.pk)
         user = UserFactory()
         user.groups.add(group)
 
@@ -84,7 +84,7 @@ class TestUsersWithPermission(TestCase):
         # given
         character = EveCharacterFactory()
         state = StateFactory(member_characters=[character])
-        state.permissions.add(self.perm)
+        state.permissions.add(self.perm.pk)
         user = UserMainFactory(main_character__character=character)
 
         UserMainFactory()
@@ -99,9 +99,9 @@ class TestUsersWithPermission(TestCase):
         # given
         character = EveCharacterFactory()
         state = StateFactory(member_characters=[character])
-        state.permissions.add(self.perm)
+        state.permissions.add(self.perm.pk)
         group = GroupFactory()
-        group.permissions.add(self.perm)
+        group.permissions.add(self.perm.pk)
         user = UserMainFactory(
             main_character__character=character, permissions=[self.perm_name]
         )
